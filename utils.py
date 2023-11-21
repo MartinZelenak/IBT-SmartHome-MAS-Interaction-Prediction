@@ -4,11 +4,32 @@ from typing import Optional
 def truncnorm(mean: float, std: float, min: Optional[float], max: Optional[float]) -> float:
     '''Truncated normal distribution'''
     result = random.normalvariate(mean, std)
+
     if min != None and max != None:
-        return result if result >= min and result <= max else truncnorm(mean, std, min, max)
+        while result < min or result > max:
+            result = random.normalvariate(mean, std)
     elif min != None:
-        return result if result >= min else truncnorm(mean, std, min, max)
+        while result < min:
+            result = random.normalvariate(mean, std)
     elif max != None:
-        return result if result <= max else truncnorm(mean, std, min, max)
-    else:
-        return result
+        while result > max:
+            result = random.normalvariate(mean, std)
+
+    return result
+
+def truncexp(mean: float, min: Optional[float], max: Optional[float]) -> float:
+    '''Truncated exponential distribution'''
+    result = random.expovariate(1/mean)
+
+    if min != None and max != None:
+        while result < min or result > max:
+            result = random.expovariate(1/mean)
+    elif min != None:
+        while result < min:
+            result = random.expovariate(1/mean)
+    elif max != None:
+        while result > max:
+            result = random.expovariate(1/mean)
+
+    return result
+
