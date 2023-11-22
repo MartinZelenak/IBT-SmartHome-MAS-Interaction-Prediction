@@ -7,9 +7,10 @@ class SmartDevice:
 
 
 class Room:
-    def __init__(self, env: TimeSlotEnvironment, name: str) -> None:
+    def __init__(self, env: TimeSlotEnvironment, name: str, temperature: float = 20) -> None:
         self.env = env
         self.name = name if name else "Unnamed"
+        self.temperature = temperature  # Celsius
         self.devices = []
 
     def add_device(self, device: SmartDevice):
