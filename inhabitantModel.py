@@ -1,11 +1,10 @@
 import simpy
 import random
 import enum
-from typing import Optional, Generator, NamedTuple
+from typing import Optional, Generator, NamedTuple, Dict, Callable
 import homeModel as hm
 from environment import TimeSlotEnvironment
-from utils import truncnorm
-from numpy import average
+from utils import truncnorm, truncexp
 
 
 class InhabitantState(enum.Enum):
@@ -28,10 +27,18 @@ class stateEnd(NamedTuple):
     min: float | None
     max: float | None
 
+    def average(self) -> float:
+        if self.min == None or self.max == None:
+            return self.min or self.max or 0
+        return (self.min + self.max) / 2
+
 class Inhabitant:
     '''Inhabitant of the house. Has its own schedule and behavior.
 
     ..._state() methods correspond to a particular state (actions/intercations).
+                Time spent in a state is elongated until stateEnd.min if set.
+                State yields after stateEnd.min are ignored.
+                Raises ValueError when stateEnd.max time is exceeded, if stateEnd.max is set.
     ..._behavior() methods correspond to transitions between states.
     current_state_actions() is called in ..._behavior() methods to execute the current state.
 
@@ -44,7 +51,7 @@ class Inhabitant:
         self.env: TimeSlotEnvironment = env
         self.state: InhabitantState = initial_state
         self.home: hm.Home = home if home else hm.Home(env)
-        self.stateMethodMap = {
+        self.stateMethodMap: Dict[InhabitantState, Callable[[], Generator[simpy.Event, None, None]]] = {
             InhabitantState.SLEEPS: self.sleeps_state,
             InhabitantState.WAKES_UP: self.wakes_up_state,
             InhabitantState.PREPARES_TO_LEAVE: self.prepares_to_leave_state,
@@ -106,24 +113,46 @@ class Inhabitant:
 
 
     def current_state_actions(self) -> Generator[simpy.Event, None, None]:
+        '''Executes the current state actions and yields events until the state ends.
+        '''
+
         # Current state event generator
         stateYield = self.stateMethodMap.get(self.state, self.unknown_state)()
 
-        # State events
-        if self.stateEnd.min != None:
+        if self.stateEnd.max != None:
             # States are cut short if they are too long
-            while self.env.now < self.stateEnd.min:
+            while self.env.now < self.stateEnd.max:
+                try:
+                    event = next(stateYield)
+
+                    # Ignore timeout if over max time
+                    if isinstance(event, simpy.Timeout):
+                        if event._delay + self.env.now > self.stateEnd.max:
+                            # WARNING: The ..._state() method will continue until the next yield/return
+                            stateYield.close()
+                            raise StopIteration
+                    yield event
+                except StopIteration:
+                    # States are extended if they are too short
+                    # (if stateEnd.min is set)
+                    if self.stateEnd.min != None and self.env.now < self.stateEnd.min:
+                        minMaxDiff = self.stateEnd.max - self.stateEnd.min
+                        end = truncexp(minMaxDiff / 2, 0, minMaxDiff) + self.stateEnd.min
+                        yield self.env.timeout(end - self.env.now)
+                    break
+
+            if self.stateEnd.max and self.env.now > self.stateEnd.max:
+                raise ValueError(f'Current state {self.state} event took too long!\nState ended: {self.env.now}\nEnd interval: {self.stateEnd}')
+            
+        elif self.stateEnd.min != None: # and self.stateEnd.max == None
+            while True:
                 try:
                     yield next(stateYield)
                 except StopIteration:
                     # States are extended if they are too short
-                    
-                    # end = random.uniform(self.stateEnd.min, self.stateEnd.max) if self.stateEnd.max else self.stateEnd.min
-                    end = truncnorm(average(self.stateEnd), 1, self.stateEnd.min, self.stateEnd.max) if self.stateEnd.max else self.stateEnd.min
-                    yield self.env.timeout(end - self.env.now)
-
-            if self.stateEnd.max and self.env.now > self.stateEnd.max:
-                raise ValueError(f'Current state {self.state} event took too long!\nState ended: {self.env.now}\nEnd interval: {self.stateEnd}')
+                    if self.stateEnd.min > self.env.now:
+                        yield self.env.timeout(self.stateEnd.min - self.env.now)
+                    break
         else:
             yield from stateYield
 
