@@ -4,7 +4,7 @@ from typing import Optional, Generator, NamedTuple
 import inhabitantModel as im
 import homeModel as hm
 from environment import TimeSlotEnvironment, TimeSlot
-from utils import truncnorm
+from utils import truncnorm, truncexp
 
 ROOMS = ['livingroom', 'kitchen', 'bathroom', 'bedroom', 'hallway', 'outside']
 
@@ -15,53 +15,58 @@ class ScenarioInhabitant(im.Inhabitant):
 
     def sleeps_state(self) -> Generator[simpy.Event, None, None]:
         '''Sleeps state. Will be prolonged until stateEnd.min'''
-        print(f"Sleeping Zzz... {self.env.timeslot} - {self.state}")
+        print(f'- Sleeps: {self.env.timeslot}')
         yield self.env.timeout(0) # Sleep until stateEnd.min
         
     def prepares_to_leave_state(self) -> Generator[simpy.Event, None, None]:
-        print(f'Prepares to leave: {self.env.timeslot}')
+        print(f'- Prepares to leave: {self.env.timeslot}')
         
         # Put on clothes
-        yield self.env.timeout(truncnorm(5, 2, 3, 7)) # 3-7 minutes
+        yield self.env.timeout(3 + truncexp(2, None, 4)) # 3-7 minutes
 
         # Go to the door
         # TODO: Go to the door
-        yield self.env.timeout(random.uniform(2, 3))
+        yield self.env.timeout(2 + truncexp(0.5, None, 1)) # 2-3 minutes
 
 
     def workday_behavior(self) -> Generator[simpy.Event, None, None] | None:
         self.stateEnd = im.stateEnd(None, None) # Reset state end
         
         # Next state logic
-        currentState = self.state
         currentTimeslot = self.env.timeslot
+        currentState = self.state
+        self.state = im.InhabitantState.UNKNOWN # Default state
         if(currentTimeslot.Hour < 6):
-            # Sleeps until 6:00-6:30
+            # Sleeps until 6:00-6:15
             self.state = im.InhabitantState.SLEEPS
-            endMin = currentTimeslot._replace(Hour = 6, Minute = 0).to_minutes() # Today at 6:00
-            end = truncnorm(endMin + 15, 5, endMin, endMin + 30) # 6:00-6:30
+            # TODO: truncexp() vs truncnorm()?
+            end = currentTimeslot._replace(Hour = 6, Minute = truncexp(7.5, 0, 15)).to_minutes()
             self.stateEnd = im.stateEnd(end, None)
 
         elif(currentTimeslot.Hour == 6):
-            if(currentTimeslot.Minute < 30 and self.state == im.InhabitantState.SLEEPS):
+            # Wakes up after Sleeping
+            if(currentState == im.InhabitantState.SLEEPS):
                 self.state = im.InhabitantState.WAKES_UP
-            elif(self.state == im.InhabitantState.WAKES_UP):
+            # Prepares to leave until 7:00 - 7:15
+            elif(currentState == im.InhabitantState.WAKES_UP):
                 self.state = im.InhabitantState.PREPARES_TO_LEAVE
-                self.stateEnd = im.stateEnd(self.env.now + 30, self.env.now + 35)  # Prepares to leave for 30-35 minutes
+                endMin = currentTimeslot._replace(Hour = 7, Minute = 0).to_minutes()
+                endMax = currentTimeslot._replace(Hour = 7, Minute = 15).to_minutes()
+                self.stateEnd = im.stateEnd(endMin, endMax)
+            else:
+                self.state = im.InhabitantState.LEFT
+        
         elif(currentTimeslot.Hour >= 7 and currentTimeslot.Hour <= 15):
             self.state = im.InhabitantState.LEFT
-        elif(self.state == im.InhabitantState.LEFT):
+        elif(currentState == im.InhabitantState.LEFT):
             self.state = im.InhabitantState.ARRIVES
-        elif(self.state == im.InhabitantState.ARRIVES):
-            # Remotly turn on the livingroom lights (knows he is going there)
-            # TODO
+        elif(currentState == im.InhabitantState.ARRIVES):
+            # TODO Remotly turn on the livingroom lights (knows he is going there)
             self.state = im.InhabitantState.RELAXES # Will go to the livingroom
-        elif(self.state == im.InhabitantState.RELAXES):
+        elif(currentState == im.InhabitantState.RELAXES):
             self.state = im.InhabitantState.SLEEPS
-            endMin = TimeSlot.from_minutes(self.env.now + 24*60)._replace(Hour = 6, Minute = 0).to_minutes()
-            self.stateEnd = im.stateEnd(endMin, endMin + 15)  # Sleeps until 6:00-6:15
-        else:
-            self.state = im.InhabitantState.UNKNOWN
+            end = (TimeSlot.from_minutes(self.env.now + 24*60))._replace(Hour = 6, Minute = truncexp(7.5, 0, 15)).to_minutes()
+            self.stateEnd = im.stateEnd(end, None)
 
         # Current state
         if(currentState != self.state):
