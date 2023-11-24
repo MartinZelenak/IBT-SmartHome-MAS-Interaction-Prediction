@@ -22,6 +22,8 @@ def truncexp(mean: float, min: Optional[float], max: Optional[float]) -> float:
     result = random.expovariate(1/mean)
 
     if min != None and max != None:
+        if min >= max:
+            raise ValueError(f"min ({min}) must be smaller than max ({max})!")
         while result < min or result > max:
             result = random.expovariate(1/mean)
     elif min != None:
