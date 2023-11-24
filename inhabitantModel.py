@@ -51,6 +51,7 @@ class Inhabitant:
         self.env: TimeSlotEnvironment = env
         self.state: InhabitantState = initial_state
         self.home: hm.Home = home if home else hm.Home(env)
+        self.location: hm.Room | None = None
         self.stateMethodMap: Dict[InhabitantState, Callable[[], Generator[simpy.Event, None, None]]] = {
             InhabitantState.SLEEPS: self.sleeps_state,
             InhabitantState.WAKES_UP: self.wakes_up_state,
@@ -114,6 +115,10 @@ class Inhabitant:
 
     def current_state_actions(self) -> Generator[simpy.Event, None, None]:
         '''Executes the current state actions and yields events until the state ends.
+        stateEnd.min and stateEnd.max can be used to determine the state end.
+        If state ends before stateEnd.min, the state is prolonged until truncexp(stateEnd.min - stateEnd.max) or stateEnd.min if stateEnd.max is None.
+        If state ends after stateEnd.max, the last timout yield, that goes beyond stateEnd.max, is ignored (state is shortened).
+        WARNING: After ignoring a timeout yield, the ..._state() method will continue until the next yield/return.
         '''
 
         # Current state event generator
@@ -141,7 +146,7 @@ class Inhabitant:
                         yield self.env.timeout(end - self.env.now)
                     break
 
-            if self.stateEnd.max and self.env.now > self.stateEnd.max:
+            if self.env.now > self.stateEnd.max:
                 raise ValueError(f'Current state {self.state} event took too long!\nState ended: {self.env.now}\nEnd interval: {self.stateEnd}')
             
         elif self.stateEnd.min != None: # and self.stateEnd.max == None
