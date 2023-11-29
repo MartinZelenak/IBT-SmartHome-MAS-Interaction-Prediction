@@ -3,7 +3,7 @@ import random
 import enum
 from typing import Optional, Generator, NamedTuple, Dict, Callable
 import homeModel as hm
-from environment import TimeSlotEnvironment
+from environment import TimeSlotEnvironment, TimeoutRequest
 from utils import truncnorm, truncexp
 
 
@@ -129,9 +129,17 @@ class Inhabitant:
             while self.env.now < self.stateEnd.max:
                 try:
                     event = next(stateYield)
-
-                    # Ignore timeout if over max time
-                    if isinstance(event, simpy.Timeout):
+                    
+                    # Handle TimeoutRequests
+                    if isinstance(event, TimeoutRequest):
+                        # Ignore TimeoutRequest if over max time
+                        if event._delay + self.env.now > self.stateEnd.max:
+                            stateYield.close()
+                            raise StopIteration
+                        else:
+                            event.confirm()
+                    # Ignore Timeout if over max time
+                    elif isinstance(event, simpy.Timeout):
                         if event._delay + self.env.now > self.stateEnd.max:
                             # WARNING: The ..._state() method will continue until the next yield/return
                             stateYield.close()
@@ -152,14 +160,29 @@ class Inhabitant:
         elif self.stateEnd.min != None: # and self.stateEnd.max == None
             while True:
                 try:
-                    yield next(stateYield)
+                    event = next(stateYield)
+
+                    # Confirm any TimeoutRequest
+                    if isinstance(event, TimeoutRequest):
+                        event.confirm()
+                    
+                    yield event
                 except StopIteration:
                     # States are extended if they are too short
                     if self.stateEnd.min > self.env.now:
                         yield self.env.timeout(self.stateEnd.min - self.env.now)
                     break
         else:
-            yield from stateYield
+            try:
+                while True:
+                    event = next(stateYield)
+                    # Confirm any TimeoutRequest
+                    if isinstance(event, TimeoutRequest):
+                        event.confirm()
+                    yield event
+            except StopIteration:
+                pass
+            # yield from stateYield
 
     def workday_behavior(self) -> Generator[simpy.Event, None, None] | None:
         yield self.env.timeout(1)

@@ -1,5 +1,5 @@
 import simpy
-from typing import NamedTuple, Union
+from typing import NamedTuple, List, Callable, Optional, Any
 
 class TimeSlot(NamedTuple):
     Minute: float
@@ -95,6 +95,28 @@ class TimeSlot(NamedTuple):
                 Year = int(min // (60*24*31*12))
         )	
 
+class TimeoutRequest(simpy.Event):
+    '''Functions just as simpy.Timeout, but is scheduled/triggered only after confirming
+    '''
+    def __init__(
+        self,
+        env: simpy.Environment,
+        delay: int | float,
+        value: Optional[Any] = None,
+    ):
+        # NOTE: This code is taken from the simpy.Timeout.__init__() method
+        if delay < 0:
+            raise ValueError(f'Negative timeout delay {delay}')
+        self.env = env
+        self.callbacks: List[Callable[[simpy.Event], None]] = []
+        self._value = value
+        self._delay = delay
+        self._ok = True
+
+    def confirm(self):
+        '''Schedules the timeout (puts it into event queue)
+        '''
+        self.env.schedule(self, delay = self._delay)
 
 class TimeSlotEnvironment(simpy.Environment):
     def __init__(self, initial_time = 0):
@@ -109,4 +131,7 @@ class TimeSlotEnvironment(simpy.Environment):
     
     def timeoutUntil(self, time: TimeSlot) -> simpy.Event:
         return self.timeout(time.to_minutes() - self.now)
+    
+    def timeoutRequest(self, delay: float | int, value: Optional[Any] = None) -> simpy.Event:
+        return TimeoutRequest(self, delay, value)
     
