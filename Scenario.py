@@ -9,6 +9,11 @@ import random
 
 ROOMS = ['livingroom', 'kitchen', 'bathroom', 'bedroom', 'office', 'hallway', 'outside']
 
+SIM_START = TimeSlot(Minute=0, Hour=0, Day=1, Month=1, Year=0).to_minutes()
+SIM_END   = TimeSlot(Minute=0, Hour=0, Day=8, Month=1, Year=0).to_minutes()
+
+NUM_OF_INHABITANTS = 3
+
 class ScenarioInhabitant(im.Inhabitant):
     def __init__(self, env: TimeSlotEnvironment, name: str, home: Optional[hm.Home] = None) -> None:
         super().__init__(env, home)
@@ -375,15 +380,27 @@ def setup_home(env: TimeSlotEnvironment) -> hm.Home:
     
     return home
 
+def day_divider(env: TimeSlotEnvironment) -> Generator[simpy.Event, None, None]:
+    '''Prints the current day every 24 hours'''
+    while True:
+        timeslot = env.timeslot
+        print(f'DAY {timeslot.Day}.{timeslot.Month}.{timeslot.Year} ----------------------------------------------')
+        yield env.timeout(60*24)
+
 
 if __name__ == '__main__':
-    env = TimeSlotEnvironment()
+    # Environment
+    env = TimeSlotEnvironment(SIM_START)
     home = setup_home(env)
-    inhabitant = ScenarioInhabitant(env, home)
-    
-    env.process(inhabitant.behaviour())
 
-    env.run(60*24) # Run for a workday
-    # env.run(60*24*5) # Run for 5 workdays
+    # Day dividning prints
+    env.process(day_divider(env))
+    
+    # Inhabitants
+    for i in range(1, NUM_OF_INHABITANTS + 1):
+        inhabitant = ScenarioInhabitant(env, str(i), home)
+        env.process(inhabitant.behaviour())
+    
+    env.run(SIM_END)
 
     print('Finish time: ' + str(env.timeslot))
