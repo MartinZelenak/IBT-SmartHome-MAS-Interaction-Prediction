@@ -21,6 +21,9 @@ class ScenarioInhabitant(im.Inhabitant):
 
     def wakes_up_state(self) -> Generator[simpy.Event, None, None]:
         if(self.env.is_weekend()):
+            # Doesn't get up immediately
+            yield self.env.timeoutRequest(3 + truncexp(7.5, None, 15)) # 3-15 minutes
+
             # Put on home clothes
             yield self.env.timeoutRequest(2 + truncexp(1.5, None, 3)) # 2-5 minutes
 
@@ -76,6 +79,7 @@ class ScenarioInhabitant(im.Inhabitant):
             yield self.env.timeoutRequest(truncexp(15, None, 30)) # 0-30 minutes
 
     def reads_state(self) -> Generator[simpy.Event, None, None]:
+        '''Reads state must be cut short'''
         # Go to the livingroom
         self.location = self.home.go_to_room('livingroom')
         yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
@@ -135,12 +139,11 @@ class ScenarioInhabitant(im.Inhabitant):
 
 
     def workday_behavior(self) -> Generator[simpy.Event, None, None] | None:
-        self.stateEnd = im.stateEnd(None, None) # Reset state end
-        
         # Next state logic
         currentTimeslot = self.env.timeslot
         currentState = self.state
         self.state = im.InhabitantState.UNKNOWN # Default state
+        self.stateEnd = im.stateEnd(None, None) # Reset state end
         if(currentTimeslot.Hour < 6):
             # Sleeps until 6:00-6:15
             self.state = im.InhabitantState.SLEEPS
@@ -196,6 +199,7 @@ class ScenarioInhabitant(im.Inhabitant):
             if endMax - self.env.now > 65:
                 nextStateEnd = self.env.now + truncexp((endMax - self.env.now) / 2, 60, endMax - self.env.now)
             else:
+                # TODO: Last activity too short?
                 nextStateEnd = self.env.now + truncexp((endMax - self.env.now) / 2, None, 60)
             self.stateEnd = im.stateEnd(None, nextStateEnd)
 
@@ -224,9 +228,141 @@ class ScenarioInhabitant(im.Inhabitant):
 
 
     def weekend_behavior(self) -> Generator[simpy.Event, None, None] | None:
-        # print(f'{self.name} | Weekend: {self.env.timeslot} - {self.state}')
-        self.state = im.InhabitantState.SLEEPS
-        self.stateEnd = im.stateEnd(self.env.now + 24*60, None)
+        # Next state logic
+        currentTimeslot = self.env.timeslot
+        currentState = self.state
+        self.state = im.InhabitantState.UNKNOWN # Default state
+        self.stateEnd = im.stateEnd(None, None) # Reset state end
+        if(currentTimeslot.Hour < 8):
+            # Sleeps until 8:00-9:30
+            self.state = im.InhabitantState.SLEEPS
+            end = currentTimeslot._replace(Hour = 8, Minute = truncexp(45, None, 90)).to_minutes()
+            self.stateEnd = im.stateEnd(end, None)
+
+        elif(currentTimeslot.Hour >= 8 and currentTimeslot.Hour <= 9):
+            # Wakes up after Sleeping
+            if(currentState == im.InhabitantState.SLEEPS):
+                self.state = im.InhabitantState.WAKES_UP
+            else:
+                # Choose a random state with some distribution
+                choice = random.random()
+                if choice < 0.45:
+                # 45%
+                    self.state = im.InhabitantState.DOES_HOBBY
+                elif choice < 0.75:
+                # 35%
+                    self.state = im.InhabitantState.READS
+                else:
+                # 25%
+                    self.state = im.InhabitantState.WORKS
+
+                endMax = currentTimeslot._replace(Hour = 12, Minute = 00).to_minutes()
+                self.stateEnd = im.stateEnd(None, endMax)
+
+        elif(currentTimeslot.Hour >= 11 and currentTimeslot.Hour <= 12):
+            # Prepares food until 13:00-13:30
+            self.state = im.InhabitantState.PREPARES_FOOD
+            endMin = currentTimeslot._replace(Hour = 13, Minute = 0).to_minutes()
+            endMax = currentTimeslot._replace(Hour = 13, Minute = 30).to_minutes()
+            self.stateEnd = im.stateEnd(endMin, endMax)
+
+        elif(currentTimeslot.Hour >= 13 and currentTimeslot.Hour <= 14):
+            if(currentState == im.InhabitantState.PREPARES_FOOD):
+                # Eats
+                self.state = im.InhabitantState.EATS
+            elif(currentState == im.InhabitantState.EATS):
+                # Relaxes after lunch
+                self.state = im.InhabitantState.RELAXES
+                endMin = currentTimeslot._replace(Hour = 15, Minute = 0).to_minutes()
+                endMax = currentTimeslot._replace(Hour = 15, Minute = 20).to_minutes()
+                self.stateEnd = im.stateEnd(endMin, endMax)
+
+        elif(currentTimeslot.Hour >= 15 and currentTimeslot.Hour <= 18):
+            if(currentState == im.InhabitantState.PREPARES_TO_LEAVE):
+                # Leaves for a walk
+                self.state = im.InhabitantState.LEFT
+            elif(currentState == im.InhabitantState.LEFT):
+                # Arrives from a walk
+                self.state = im.InhabitantState.ARRIVES
+            else:
+                # Choose a random state with some distribution (different than current state)
+                while True:
+                    choice = random.random()
+                    if choice < 0.4:
+                    # 40%
+                        self.state = im.InhabitantState.DOES_HOBBY
+                    elif choice < 0.65:
+                    # 25%
+                        self.state = im.InhabitantState.WORKS
+                    elif choice < 0.85:
+                    # 20%
+                        self.state = im.InhabitantState.READS
+                    else:
+                    # 15%
+                        # Goes for a walk
+                        self.state = im.InhabitantState.PREPARES_TO_LEAVE
+
+                    if(self.state != currentState):
+                        break
+            
+            # Does 2-3 activities
+            if(self.state != im.InhabitantState.PREPARES_TO_LEAVE 
+               and self.state != im.InhabitantState.ARRIVES):
+                if(currentTimeslot.Hour == 15):
+                    endMin = currentTimeslot._replace(Hour = 16, Minute = 20).to_minutes()
+                    endMax = currentTimeslot._replace(Hour = 17, Minute = 15).to_minutes()
+                elif(currentTimeslot.Hour == 16):
+                    endMin = currentTimeslot._replace(Hour = 17, Minute = 55).to_minutes()
+                    endMax = currentTimeslot._replace(Hour = 19, Minute = 5).to_minutes()
+                else:
+                    endMin = currentTimeslot._replace(Hour = 19, Minute = 30).to_minutes()
+                    endMax = currentTimeslot._replace(Hour = 19, Minute = 59).to_minutes()
+                self.stateEnd = im.stateEnd(endMin, endMax)
+
+        elif(currentTimeslot.Hour == 19):
+            # Works or Does hobby after previous activities
+            choice = random.random()
+            if choice < 0.7:
+            # 70%
+                self.state = im.InhabitantState.WORKS
+            else:
+            # 30%
+                self.state = im.InhabitantState.DOES_HOBBY
+
+            endMin = currentTimeslot._replace(Hour = 20, Minute = 5).to_minutes()
+            endMax = currentTimeslot._replace(Hour = 21, Minute = 20).to_minutes()
+            self.stateEnd = im.stateEnd(endMin, endMax)
+
+        elif(currentTimeslot.Hour == 20): # May be skipped if previous activity was long enough
+            # Reads
+            self.state = im.InhabitantState.READS
+            endMax = currentTimeslot._replace(Hour = 21, Minute = 30).to_minutes()
+            self.stateEnd = im.stateEnd(None, endMax)
+
+        elif(currentTimeslot.Hour >= 21 and currentTimeslot.Hour <= 22):
+            # Prepares food
+            self.state = im.InhabitantState.PREPARES_FOOD
+
+            if(currentState == im.InhabitantState.PREPARES_FOOD):
+                # Eats
+                self.state = im.InhabitantState.EATS
+            elif(currentState == im.InhabitantState.EATS):
+                # Relaxes after dinner
+                self.state = im.InhabitantState.RELAXES
+                endMin = currentTimeslot._replace(Hour = 23, Minute = 0).to_minutes()
+                endMax = currentTimeslot._replace(Hour = 23, Minute = 30).to_minutes()
+                self.stateEnd = im.stateEnd(endMin, endMax)
+        
+        elif(currentTimeslot.Hour == 23):
+            # Sleeps until 5:00 (will be prolonged based on the next day being weekend or not)
+            self.state = im.InhabitantState.SLEEPS
+            end = currentTimeslot._replace(Hour = 8, Minute = truncexp(45, None, 90)).to_minutes() + 24*60
+            self.stateEnd = im.stateEnd(end, None)
+
+                
+        # Current state
+        if(currentState != self.state):
+            print(f'{self.name} | Weekend: {self.env.timeslot} - {self.state}')
 
 
 def setup_home(env: TimeSlotEnvironment) -> hm.Home:
