@@ -361,7 +361,7 @@ class ScenarioInhabitant(im.Inhabitant):
         elif(currentTimeslot.Hour == 23):
             # Sleeps until 5:00 (will be prolonged based on the next day being weekend or not)
             self.state = im.InhabitantState.SLEEPS
-            end = currentTimeslot._replace(Hour = 8, Minute = truncexp(45, None, 90)).to_minutes() + 24*60
+            end = currentTimeslot._replace(Hour = 5, Minute = 0).to_minutes() + 24*60
             self.stateEnd = im.stateEnd(end, None)
 
                 
