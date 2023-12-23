@@ -1,6 +1,7 @@
 import simpy
 from typing import NamedTuple, List, Callable, Optional, Any
 from homeModel import Home
+from event import EventHandler
 
 class TimeSlot(NamedTuple):
     Minute: float
@@ -123,6 +124,7 @@ class Environment(simpy.Environment):
     def __init__(self, initial_time = 0):
         super().__init__(initial_time)
         self.home = Home(self)
+        self.eventHandler = EventHandler()
 
     @property
     def timeslot(self) -> TimeSlot:
