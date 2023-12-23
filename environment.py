@@ -1,6 +1,5 @@
 import simpy
 from typing import NamedTuple, List, Callable, Optional, Any
-from homeModel import Home
 from event import EventHandler
 
 class TimeSlot(NamedTuple):
@@ -120,10 +119,15 @@ class TimeoutRequest(simpy.Event):
         '''
         self.env.schedule(self, delay = self._delay)
 
+def get_home():
+    '''Returns the Home class from homeModel.py. Needed to avoid circular imports.'''
+    from homeModel import Home
+    return Home
+
 class Environment(simpy.Environment):
     def __init__(self, initial_time = 0):
         super().__init__(initial_time)
-        self.home = Home(self)
+        self.home = get_home()(self)
         self.eventHandler = EventHandler()
 
     @property
