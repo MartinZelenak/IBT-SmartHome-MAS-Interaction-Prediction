@@ -31,9 +31,10 @@ class Home:
         self.rooms[room.name] = room
 
     def go_to_room(self, room_name: str, inhabitant_name: str) -> Room:
-        '''Returns the room with the given name. Logs the inhabitant's movement to the room.'''
+        '''Returns the room with the given name. Publishes an event that the inhabitant went to the room.'''
         if room_name not in self.rooms:
             raise ValueError(f"Home does not have a room called {room_name}!")
+        self.env.eventHandler.publish("inhabitant_goes_to_room", inhabitant_name, room_name)
         print(f"{inhabitant_name} | -> {room_name}")
         return self.rooms[room_name]
     

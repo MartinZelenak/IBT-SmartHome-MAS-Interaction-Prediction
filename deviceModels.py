@@ -20,16 +20,20 @@ class SmartLight(SmartDevice):
 
     def turn_on(self) -> None:
         self.on = True
+        self.env.eventHandler.publish("light_turned_on", self.name)
         print(f"? | -o {self.name} turned on")
 
     def turn_off(self) -> None:
         self.on = False
+        self.env.eventHandler.publish("light_turned_off", self.name)
         print(f"? | -o {self.name} turned off")
 
     def remote_turn_on(self, inhabitant_name: str) -> None:
         self.on = True
+        self.env.eventHandler.publish("light_turned_on", self.name, inhabitant_name)
         print(f"{inhabitant_name} | -o {self.name} turned on")
 
     def remote_turn_off(self, inhabitant_name: str) -> None:
         self.on = False
+        self.env.eventHandler.publish("light_turned_on", self.name, inhabitant_name)
         print(f"{inhabitant_name} | -o {self.name} turned off")
