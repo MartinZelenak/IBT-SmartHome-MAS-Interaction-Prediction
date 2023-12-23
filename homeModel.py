@@ -1,9 +1,9 @@
 from typing import Dict, Callable
-from environment import TimeSlotEnvironment
+from environment import Environment
 from deviceModels import SmartDevice
 
 class Room:
-    def __init__(self, env: TimeSlotEnvironment, name: str, temperature: float = 20) -> None:
+    def __init__(self, env: Environment, name: str, temperature: float = 20) -> None:
         self.env = env
         self.name = name if name else "Unnamed"
         self.temperature = temperature  # Celsius
@@ -21,7 +21,7 @@ class Room:
 
 
 class Home:
-    def __init__(self, env: TimeSlotEnvironment) -> None:
+    def __init__(self, env: Environment) -> None:
         self.env = env
         self.rooms: Dict[str, Room] = {}
 

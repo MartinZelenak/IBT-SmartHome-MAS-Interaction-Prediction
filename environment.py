@@ -1,5 +1,6 @@
 import simpy
 from typing import NamedTuple, List, Callable, Optional, Any
+from homeModel import Home
 
 class TimeSlot(NamedTuple):
     Minute: float
@@ -118,9 +119,10 @@ class TimeoutRequest(simpy.Event):
         '''
         self.env.schedule(self, delay = self._delay)
 
-class TimeSlotEnvironment(simpy.Environment):
+class Environment(simpy.Environment):
     def __init__(self, initial_time = 0):
         super().__init__(initial_time)
+        self.home = Home(self)
 
     @property
     def timeslot(self) -> TimeSlot:

@@ -4,7 +4,7 @@ from typing import Optional, Generator, NamedTuple
 import inhabitantModel as im
 import homeModel as hm
 import deviceModels as dm
-from environment import TimeSlotEnvironment, TimeSlot
+from environment import Environment, TimeSlot
 from utils import truncnorm, truncexp
 
 ROOMS = ['livingroom', 'kitchen', 'bathroom', 'bedroom', 'office', 'hallway', 'outside']
@@ -12,11 +12,11 @@ ROOMS = ['livingroom', 'kitchen', 'bathroom', 'bedroom', 'office', 'hallway', 'o
 SIM_START = TimeSlot(Minute=0, Hour=0, Day=1, Month=1, Year=0).to_minutes()
 SIM_END   = TimeSlot(Minute=0, Hour=0, Day=8, Month=1, Year=0).to_minutes()
 
-NUM_OF_INHABITANTS = 3
+NUM_OF_INHABITANTS = 1
 
 class ScenarioInhabitant(im.Inhabitant):
-    def __init__(self, env: TimeSlotEnvironment, name: str, home: Optional[hm.Home] = None) -> None:
-        super().__init__(env, name, home)
+    def __init__(self, env: Environment, name: str, home: Optional[hm.Home] = None) -> None:
+        super().__init__(env, name)
         # TODO: self.stateofmind = ..
 
     def sleeps_state(self) -> Generator[simpy.Event, None, None]:
@@ -33,13 +33,13 @@ class ScenarioInhabitant(im.Inhabitant):
             yield self.env.timeoutRequest(3 + truncexp(7.5, None, 15)) # 3-15 minutes
 
             ## Turns the lights on
-            self.home.get_device_op('bedroom', 'bedroom_light', 'turn_on')()
+            self.env.home.get_device_op('bedroom', 'bedroom_light', 'turn_on')()
 
             # Put on home clothes
             yield self.env.timeoutRequest(2 + truncexp(1.5, None, 3)) # 2-5 minutes
 
             ## Turns the lights off
-            self.home.get_device_op('bedroom', 'bedroom_light', 'turn_off')()
+            self.env.home.get_device_op('bedroom', 'bedroom_light', 'turn_off')()
 
         # Go to the bathroom
         if(self.go_to_room('bathroom')):
@@ -64,7 +64,7 @@ class ScenarioInhabitant(im.Inhabitant):
         ## Turns the lights on
         lightIsOn = False
         if(self.env.timeslot.Hour < 8 or self.env.timeslot.Hour >= 21):
-            self.home.get_device_op('bedroom', 'bedroom_light', 'turn_on')()
+            self.env.home.get_device_op('bedroom', 'bedroom_light', 'turn_on')()
             lightIsOn = True
 
         # Put on clothes and grab stuff
@@ -72,7 +72,7 @@ class ScenarioInhabitant(im.Inhabitant):
 
         ## Turns the lights off
         if(lightIsOn):
-            self.home.get_device_op('bedroom', 'bedroom_light', 'turn_off')()
+            self.env.home.get_device_op('bedroom', 'bedroom_light', 'turn_off')()
 
         # Go to the door
         self.go_to_room('hallway')
@@ -114,7 +114,6 @@ class ScenarioInhabitant(im.Inhabitant):
         # Watch TV
         while True:
             # Will be cut short by stateEnd.max
-            # TODO: truncexp(15, None, 30) High enough variance? How to determine?
             yield self.env.timeoutRequest(truncexp(15, None, 30)) # 0-30 minutes
 
     def reads_state(self) -> Generator[simpy.Event, None, None]:
@@ -187,7 +186,6 @@ class ScenarioInhabitant(im.Inhabitant):
         if(currentTimeslot.Hour < 6):
             # Sleeps until 6:00-6:15
             self.state = im.InhabitantState.SLEEPS
-            # TODO: truncexp() vs truncnorm()?
             end = currentTimeslot._replace(Hour = 6, Minute = truncexp(7.5, None, 15)).to_minutes()
             self.stateEnd = im.stateEnd(end, None)
 
@@ -379,7 +377,7 @@ class ScenarioInhabitant(im.Inhabitant):
             self.stateEnd = im.stateEnd(None, endMax)
 
             ## Remotly turns on the livingroom light (knows he is going there)¨
-            self.home.get_device_op('livingroom', 'livingroom_light', 'remote_turn_on')(self.name)
+            self.env.home.get_device_op('livingroom', 'livingroom_light', 'remote_turn_on')(self.name)
 
         elif(currentTimeslot.Hour >= 21 and currentTimeslot.Hour <= 22):
             # Prepares food
@@ -406,17 +404,13 @@ class ScenarioInhabitant(im.Inhabitant):
             print(f'{self.name} | Weekend: {self.env.timeslot} - {self.state}')
 
 
-def setup_home(env: TimeSlotEnvironment) -> hm.Home:
-    home = hm.Home(env)
-
+def setup_home(home: hm.Home):
     for roomName in ROOMS:
         room = hm.Room(env, roomName)
         room.add_device(dm.SmartLight(env, f'{roomName}_light'))
         home.add_room(room)
-    
-    return home
 
-def day_divider(env: TimeSlotEnvironment) -> Generator[simpy.Event, None, None]:
+def day_divider(env: Environment) -> Generator[simpy.Event, None, None]:
     '''Prints the current day every 24 hours'''
     while True:
         timeslot = env.timeslot
@@ -426,16 +420,16 @@ def day_divider(env: TimeSlotEnvironment) -> Generator[simpy.Event, None, None]:
 
 if __name__ == '__main__':
     # Environment
-    env = TimeSlotEnvironment(SIM_START)
-    home = setup_home(env)
+    env = Environment(SIM_START)
+    setup_home(env.home)
 
     # Day dividning prints
     env.process(day_divider(env))
     
     # Inhabitants
     for i in range(1, NUM_OF_INHABITANTS + 1):
-        inhabitant = ScenarioInhabitant(env, str(i), home)
-        inhabitant.location = home.rooms['bedroom'] # Start in the bedroom
+        inhabitant = ScenarioInhabitant(env, str(i))
+        inhabitant.location = env.home.rooms['bedroom'] # Start in the bedroom
         env.process(inhabitant.behaviour())
     
     env.run(SIM_END)

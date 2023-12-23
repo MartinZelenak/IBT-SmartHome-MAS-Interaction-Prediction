@@ -3,7 +3,7 @@ import random
 import enum
 from typing import Optional, Generator, NamedTuple, Dict, Callable
 import homeModel as hm
-from environment import TimeSlotEnvironment, TimeoutRequest
+from environment import Environment, TimeoutRequest
 from utils import truncnorm, truncexp
 
 
@@ -45,14 +45,12 @@ class Inhabitant:
     Inherit this class to create a custom inhabitant.
     '''
     def __init__(self, 
-                 env: TimeSlotEnvironment, 
+                 env: Environment, 
                  name: str,
-                 home: Optional[hm.Home] = None, 
                  initial_state: InhabitantState = InhabitantState.UNKNOWN) -> None:
-        self.env: TimeSlotEnvironment = env
+        self.env: Environment = env
         self.state: InhabitantState = initial_state
         self.name: str = name
-        self.home: hm.Home = home if home else hm.Home(env)
         self.location: hm.Room | None = None
         self.stateMethodMap: Dict[InhabitantState, Callable[[], Generator[simpy.Event, None, None]]] = {
             InhabitantState.SLEEPS: self.sleeps_state,
@@ -75,7 +73,7 @@ class Inhabitant:
     def go_to_room(self, room_name: str) -> bool:
         '''Returns True if the inhabitant moved to the room, False otherwise.'''
         if not self.location or self.location.name != room_name:
-            self.location = self.home.go_to_room(room_name, self.name)
+            self.location = self.env.home.go_to_room(room_name, self.name)
             return True
         return False
 
