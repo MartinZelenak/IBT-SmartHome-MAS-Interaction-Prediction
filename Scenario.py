@@ -33,13 +33,13 @@ class ScenarioInhabitant(im.Inhabitant):
             yield self.env.timeoutRequest(3 + truncexp(7.5, None, 15)) # 3-15 minutes
 
             ## Turns the lights on
-            self.env.home.get_device_op('bedroom', 'bedroom_light', 'turn_on')()
+            self.env.home.get_device_op('bedroom', 'bedroom_light', 'turn_on')(self.name)
 
             # Put on home clothes
             yield self.env.timeoutRequest(2 + truncexp(1.5, None, 3)) # 2-5 minutes
 
             ## Turns the lights off
-            self.env.home.get_device_op('bedroom', 'bedroom_light', 'turn_off')()
+            self.env.home.get_device_op('bedroom', 'bedroom_light', 'turn_off')(self.name)
 
         # Go to the bathroom
         if(self.go_to_room('bathroom')):
@@ -64,7 +64,7 @@ class ScenarioInhabitant(im.Inhabitant):
         ## Turns the lights on
         lightIsOn = False
         if(self.env.timeslot.Hour < 8 or self.env.timeslot.Hour >= 21):
-            self.env.home.get_device_op('bedroom', 'bedroom_light', 'turn_on')()
+            self.env.home.get_device_op('bedroom', 'bedroom_light', 'turn_on')(self.name)
             lightIsOn = True
 
         # Put on clothes and grab stuff
@@ -72,7 +72,7 @@ class ScenarioInhabitant(im.Inhabitant):
 
         ## Turns the lights off
         if(lightIsOn):
-            self.env.home.get_device_op('bedroom', 'bedroom_light', 'turn_off')()
+            self.env.home.get_device_op('bedroom', 'bedroom_light', 'turn_off')(self.name)
 
         # Go to the door
         self.go_to_room('hallway')
@@ -377,7 +377,7 @@ class ScenarioInhabitant(im.Inhabitant):
             self.stateEnd = im.stateEnd(None, endMax)
 
             ## Remotly turns on the livingroom light (knows he is going there)¨
-            self.env.home.get_device_op('livingroom', 'livingroom_light', 'remote_turn_on')(self.name)
+            self.env.home.get_device_op('livingroom', 'livingroom_light', 'turn_on')(self.name)
 
         elif(currentTimeslot.Hour >= 21 and currentTimeslot.Hour <= 22):
             # Prepares food
