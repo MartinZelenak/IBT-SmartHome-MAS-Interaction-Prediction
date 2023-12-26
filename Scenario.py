@@ -10,8 +10,8 @@ from stateLogger import StateLogger
 
 ROOMS = ['livingroom', 'kitchen', 'bathroom', 'bedroom', 'office', 'hallway', 'outside']
 
-SIM_START = TimeSlot(Minute=0, Hour=0, Day=1, Month=1, Year=0).to_minutes()
-SIM_END   = TimeSlot(Minute=0, Hour=0, Day=8, Month=1, Year=0).to_minutes()
+SIM_START = TimeSlot(Minute=0, Hour=0, Day=1, Month=1, Year=1).to_minutes()
+SIM_END   = TimeSlot(Minute=0, Hour=0, Day=8, Month=1, Year=1).to_minutes()
 
 LOG_TIME_INTERVAL = 5 # minutes # Log every LOG_TIME_INTERVAL minutes
 

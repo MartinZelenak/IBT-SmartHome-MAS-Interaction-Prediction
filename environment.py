@@ -84,7 +84,7 @@ class TimeSlot(NamedTuple):
         return self.to_minutes() == other.to_minutes()
 
     def to_minutes(self):
-        return self.Minute + self.Hour * 60 + (self.Day - 1) * 24 * 60 + (self.Month - 1) * 31 * 24 * 60 + self.Year * 12 * 31 * 24 * 60
+        return self.Minute + self.Hour * 60 + (self.Day - 1) * 24 * 60 + (self.Month - 1) * 31 * 24 * 60 + (self.Year - 1) * 12 * 31 * 24 * 60
     
     @staticmethod
     def from_minutes(min: float | int) -> 'TimeSlot':
@@ -93,7 +93,7 @@ class TimeSlot(NamedTuple):
                 Hour = int((min // 60) % 24), 
                 Day = int((min // (60*24)) % 31 + 1), 
                 Month = int((min // (60*24*31)) % 12 + 1), 
-                Year = int(min // (60*24*31*12))
+                Year = int((min // (60*24*31*12)) + 1)
         )	
 
 class TimeoutRequest(simpy.Event):
