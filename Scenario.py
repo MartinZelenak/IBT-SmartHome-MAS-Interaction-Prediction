@@ -1,16 +1,19 @@
 import simpy
 import random
-from typing import Optional, Generator, NamedTuple
+from typing import Optional, Generator, List
 import inhabitantModel as im
 import homeModel as hm
 import deviceModels as dm
 from environment import Environment, TimeSlot
 from utils import truncnorm, truncexp
+from stateLogger import StateLogger
 
 ROOMS = ['livingroom', 'kitchen', 'bathroom', 'bedroom', 'office', 'hallway', 'outside']
 
 SIM_START = TimeSlot(Minute=0, Hour=0, Day=1, Month=1, Year=0).to_minutes()
 SIM_END   = TimeSlot(Minute=0, Hour=0, Day=8, Month=1, Year=0).to_minutes()
+
+LOG_TIME_INTERVAL = 5 # minutes # Log every LOG_TIME_INTERVAL minutes
 
 NUM_OF_INHABITANTS = 1
 
@@ -427,11 +430,20 @@ if __name__ == '__main__':
     env.process(day_divider(env))
     
     # Inhabitants
+    stateLoggers: List[StateLogger] = []
     for i in range(1, NUM_OF_INHABITANTS + 1):
         inhabitant = ScenarioInhabitant(env, str(i))
         inhabitant.location = env.home.rooms['bedroom'] # Start in the bedroom
         env.process(inhabitant.behaviour())
+        
+        # State logger
+        stateLoggers.append(StateLogger(env, LOG_TIME_INTERVAL, './logs/log' + str(i) + '.log', inhabitant))
+        env.eventHandler.subscribe('light_turned_on', stateLoggers[-1].deviceTurnedOnHandler)
+        env.eventHandler.subscribe('light_turned_off', stateLoggers[-1].deviceTurnedOffHandler)
+        env.process(stateLoggers[-1].logBehavior())
     
     env.run(SIM_END)
 
     print('Finish time: ' + str(env.timeslot))
+    for stateLogger in stateLoggers:
+        stateLogger.close()
