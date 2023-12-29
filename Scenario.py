@@ -437,7 +437,7 @@ if __name__ == '__main__':
         env.process(inhabitant.behaviour())
         
         # State logger
-        stateLoggers.append(StateLogger(env, LOG_TIME_INTERVAL, './logs/log' + str(i) + '.log', inhabitant))
+        stateLoggers.append(StateLogger(env, LOG_TIME_INTERVAL, './logs/inhabitant_' + str(i) + '.csv', inhabitant))
         env.eventHandler.subscribe('light_turned_on', stateLoggers[-1].deviceTurnedOnHandler)
         env.eventHandler.subscribe('light_turned_off', stateLoggers[-1].deviceTurnedOffHandler)
         env.process(stateLoggers[-1].logBehavior())
