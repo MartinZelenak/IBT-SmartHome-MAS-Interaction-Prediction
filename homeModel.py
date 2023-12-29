@@ -18,6 +18,11 @@ class Room:
         if device_name not in self.devices:
             raise ValueError(f"Room {self.name} does not have a device called {device_name}!")
         return self.devices[device_name]
+    
+    def get_device_op(self, device_name: str, operation_name: str) -> Callable:
+        if device_name not in self.devices:
+            raise ValueError(f"Room {self.name} does not have a device called {device_name}!")
+        return self.devices[device_name].opMap[operation_name]
 
 
 class Home:
@@ -41,4 +46,4 @@ class Home:
     def get_device_op(self, room_name: str, device_name: str, operation_name: str) -> Callable:
         if room_name not in self.rooms:
             raise ValueError(f"Home does not have a room called {room_name}!")
-        return self.rooms[room_name].get_device(device_name).opMap[operation_name]
+        return self.rooms[room_name].get_device_op(device_name, operation_name)
