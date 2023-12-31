@@ -18,7 +18,14 @@ class TimeSlotState:
 
 
 class StateLogger:
-    '''Logs the state of the environment and location of given inhabitant in given time interval (time slot lenght).'''
+    '''Logs the state of the environment and location of given inhabitant in given time interval (time slot length).
+    Logs are saved in a csv file.
+
+    Logs are saved in the following format:
+    Minute,Hour,Day,Month,Year,Location,Device1_on,Device2_on,...,InhabitantActions[device_number:action_number;...;device_number:action_number]
+    - Location: number of the room in the list of rooms in the home (starts from 1)
+    - device_number: number of the device in the list of devices being logged (starts from 1)
+    - action_number: number of the action the inhabitant performed with the device (starts from 1)'''
     def __init__(self, env: Environment, timeInterval: float, logFilePath: str, inhabitant: Inhabitant):
         self.env = env
         self.timeInterval = timeInterval
@@ -72,7 +79,7 @@ class StateLogger:
     def deviceTurnedOnHandler(self, deviceName: str, inhabitantName: str):
         if self.inhabitant.name == inhabitantName:
             if deviceName in self.deviceNumbers.keys():
-                self.state.InhabitantActions.append((self.deviceNumbers[deviceName], 1))
+                self.state.InhabitantActions.append((self.deviceNumbers[deviceName], 2))
             else:
                 print(f"Device {deviceName} turned ON, but is not being logged.")
 
@@ -80,7 +87,7 @@ class StateLogger:
     def deviceTurnedOffHandler(self, deviceName: str, inhabitantName: str):
         if self.inhabitant.name == inhabitantName:
             if deviceName in self.deviceNumbers.keys():
-                self.state.InhabitantActions.append((self.deviceNumbers[deviceName], 0))
+                self.state.InhabitantActions.append((self.deviceNumbers[deviceName], 1))
             else:
                 print(f"Device {deviceName} turned OFF, but is not being logged.")
     ################################

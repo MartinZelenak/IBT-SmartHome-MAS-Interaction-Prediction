@@ -113,7 +113,7 @@ class ScenarioInhabitant(im.Inhabitant):
 
     def relaxes_state(self) -> Generator[simpy.Event, None, None]:
         '''Relaxes state must be cut short'''
-        # Go to the livingroom
+        # Go to the living room
         if(self.go_to_room('livingroom')):
             yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
 
@@ -421,7 +421,7 @@ class ScenarioInhabitant(im.Inhabitant):
             endMax = currentTimeslot._replace(Hour = 21, Minute = 30).to_minutes()
             self.stateEnd = im.stateEnd(None, endMax)
 
-            ## Remotly turns on the livingroom light (knows he is going there)¨
+            ## Remotely turns on the livingroom light (knows he is going there)
             self.env.home.get_device_op('livingroom', 'livingroom_light', 'turn_on')(self.name)
 
         elif(currentTimeslot.Hour >= 21 and currentTimeslot.Hour <= 22):
@@ -470,7 +470,7 @@ if __name__ == '__main__':
     env = Environment(SIM_START)
     setup_home(env.home)
 
-    # Day dividning prints
+    # Day dividing prints
     env.process(day_divider(env))
     
     # Inhabitants
