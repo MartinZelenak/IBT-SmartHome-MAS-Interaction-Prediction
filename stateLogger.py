@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional, Generator
+import os
 import simpy
 from environment import Environment, TimeSlot
 from homeModel import Home, Room
@@ -20,6 +21,7 @@ class TimeSlotState:
 class StateLogger:
     '''Logs the state of the environment and location of given inhabitant in given time interval (time slot length).
     Logs are saved in a csv file.
+    If the file already exists, logs will be appended without a header.
 
     Logs are saved in the following format:
     Minute,Hour,Day,Month,Year,Location,Device1_on,Device2_on,...,InhabitantActions[device_number:action_number;...;device_number:action_number]
@@ -31,8 +33,10 @@ class StateLogger:
         self.timeInterval = timeInterval
         
         self.logFilePath = logFilePath
-        self.logFile = open(logFilePath, 'w')
-        self.logFile.write('Minute,Hour,Day,Month,Year,Location')
+        fileExists: bool = os.path.isfile(logFilePath)
+        self.logFile = open(logFilePath, 'a' if fileExists else 'w')
+        if not fileExists:
+            self.logFile.write('Minute,Hour,Day,Month,Year,Location')
 
         self.state: TimeSlotState = TimeSlotState(env.timeslot, None, [], []) # Current state
 
@@ -46,8 +50,10 @@ class StateLogger:
                 if isinstance(device, SmartLight):  # Log only SmartLight devices # TODO: Log all devices
                     self.deviceNumbers[device.name] = len(self.deviceNumbers) + 1
                     self.state.DevicesStates.append(device.on)
-                    self.logFile.write(',' + device.name + '_on')
-        self.logFile.write(',InhabitantActions[...;...]\n')
+                    if not fileExists:
+                        self.logFile.write(',' + device.name + '_on')
+        if not fileExists:
+            self.logFile.write(',InhabitantActions[...;...]\n')
 
         # Logged inhabitant reference
         self.inhabitant = inhabitant
