@@ -76,8 +76,9 @@ class StateLogger:
     # Periodic logging
     def logBehavior(self) -> Generator[simpy.Event, None, None]:
         while True:
-            self.log()
+            # Wait for next time slot and log the previous one
             yield self.env.timeout(self.timeInterval)
+            self.log()
 
     # Actions during time slot
     ################################
