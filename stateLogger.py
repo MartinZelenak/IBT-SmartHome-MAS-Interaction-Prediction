@@ -33,10 +33,8 @@ class StateLogger:
         self.timeInterval = timeInterval
         
         self.logFilePath = logFilePath
-        fileExists: bool = os.path.isfile(logFilePath)
-        self.logFile = open(logFilePath, 'a' if fileExists else 'w')
-        if not fileExists:
-            self.logFile.write('Minute,Hour,Day,Month,Year,Location')
+        self.logFile = open(logFilePath, 'w')
+        self.logFile.write('Minute,Hour,Day,Month,Year,Location')
 
         self.state: TimeSlotState = TimeSlotState(env.timeslot, None, [], []) # Current state
 
@@ -50,10 +48,9 @@ class StateLogger:
                 if isinstance(device, SmartLight):  # Log only SmartLight devices # TODO: Log all devices
                     self.deviceNumbers[device.name] = len(self.deviceNumbers) + 1
                     self.state.DevicesStates.append(device.on)
-                    if not fileExists:
-                        self.logFile.write(',' + device.name + '_on')
-        if not fileExists:
-            self.logFile.write(',InhabitantActions[...;...]\n')
+                    self.logFile.write(',' + device.name + '_on')
+        
+        self.logFile.write(',InhabitantActions[...;...]\n')
 
         # Logged inhabitant reference
         self.inhabitant = inhabitant
@@ -69,7 +66,7 @@ class StateLogger:
         self.state.InhabitantActions = []
         for room in self.env.home.rooms.values():
             for device in room.devices.values():
-                if isinstance(device, SmartLight) and device in self.deviceNumbers.keys(): # TODO: Log all devices
+                if isinstance(device, SmartLight) and device.name in self.deviceNumbers.keys(): # TODO: Log all devices
                     self.state.DevicesStates[self.deviceNumbers[device.name] - 1] = device.on
 
     # Simpy process
