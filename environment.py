@@ -134,6 +134,9 @@ class Environment(simpy.Environment):
     def timeslot(self) -> TimeSlot:
         return TimeSlot.from_minutes(self.now)
 
+    def day_of_week(self) -> int:
+        return int((self.now // (60*24)) % 7 + 1)
+
     def is_weekend(self) -> bool:
         return int((self.now // (60*24)) % 7 + 1) > 5
     

@@ -10,12 +10,13 @@ from inhabitantModel import Inhabitant
 @dataclass
 class TimeSlotState:
     StartTime: TimeSlot
+    DayOfWeek: int                              # 1: Monday, 7: Sunday
     InhabitantStartLocation: Optional[int]      # Number of the location where inhabitant was at the start of the time slot
     DevicesStates: List[bool]                   # Devices on(True)/off(False) states
     InhabitantActions: List[Tuple[int, int]]    # Inhabitant actions (device number, action number) in current timeslot
 
     def __str__(self):
-        return f'{self.StartTime.Minute},{self.StartTime.Hour},{self.StartTime.Day},{self.StartTime.Month},{self.StartTime.Year},{self.InhabitantStartLocation},{",".join([("1" if state else "0") for state in self.DevicesStates])},[{";".join([f"{action[0]}:{action[1]}" for action in self.InhabitantActions])}]'
+        return f'{self.StartTime.Minute},{self.StartTime.Hour},{self.DayOfWeek},{self.StartTime.Day},{self.StartTime.Month},{self.StartTime.Year},{self.InhabitantStartLocation},{",".join([("1" if state else "0") for state in self.DevicesStates])},[{";".join([f"{action[0]}:{action[1]}" for action in self.InhabitantActions])}]'
 
 
 class StateLogger:
@@ -34,9 +35,9 @@ class StateLogger:
         
         self.logFilePath = logFilePath
         self.logFile = open(logFilePath, 'w')
-        self.logFile.write('Minute,Hour,Day,Month,Year,Location')
+        self.logFile.write('Minute,Hour,DayOfWeek,DayOfMonth,Month,Year,Location')
 
-        self.state: TimeSlotState = TimeSlotState(env.timeslot, None, [], []) # Current state
+        self.state: TimeSlotState = TimeSlotState(env.timeslot, env.day_of_week(), None, [], []) # Current state
 
         # Location name to number mapping
         self.locationNumbers: Dict[str, int] = {}   # Room name, Room number
@@ -62,6 +63,7 @@ class StateLogger:
 
         # Update current state
         self.state.StartTime = self.env.timeslot
+        self.state.DayOfWeek = self.env.day_of_week()
         self.state.InhabitantStartLocation = self.locationNumbers[self.inhabitant.location.name] if self.inhabitant.location else None
         self.state.InhabitantActions = []
         for room in self.env.home.rooms.values():
