@@ -21,13 +21,12 @@ NUM_OF_INHABITANTS = 1
 class ScenarioInhabitant(im.Inhabitant):
     def __init__(self, env: Environment, name: str) -> None:
         super().__init__(env, name)
-        # TODO: self.stateofmind = ..
 
     def sleeps_state(self) -> Generator[simpy.Event, None, None]:
         '''Sleeps state must be prolonged'''
         # Go to the bedroom
         if(self.go_to_room('bedroom')):
-            yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
+            yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
 
         ## Turns the lights off
         self.location.get_device_op('bedroom_light', 'turn_off')(self.name)
@@ -37,42 +36,42 @@ class ScenarioInhabitant(im.Inhabitant):
     def wakes_up_state(self) -> Generator[simpy.Event, None, None]:
         if(self.env.is_weekend()):
             # Doesn't get up immediately
-            yield self.env.timeoutRequest(3 + truncexp(7.5, None, 15)) # 3-15 minutes
+            yield self.env.timeoutRequest(3 + truncexp(7.5, 15)) # 3-15 minutes
 
             ## Turns the lights on
             self.location.get_device_op('bedroom_light', 'turn_on')(self.name)
 
             # Put on home clothes
-            yield self.env.timeoutRequest(2 + truncexp(1.5, None, 3)) # 2-5 minutes
+            yield self.env.timeoutRequest(2 + truncexp(1.5, 3)) # 2-5 minutes
 
             ## Turns the lights off
             self.location.get_device_op('bedroom_light', 'turn_off')(self.name)
 
         # Go to the bathroom
         if(self.go_to_room('bathroom')):
-            yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.25-0.5 minutes
+            yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.25-0.5 minutes
 
         ## Turns the lights on
         self.location.get_device_op('bathroom_light', 'turn_on')(self.name)
         
         # Brush teeth
-        yield self.env.timeoutRequest(1 + truncexp(1, None, 2)) # 1-3 minutes
+        yield self.env.timeoutRequest(1 + truncexp(1, 2)) # 1-3 minutes
 
         ## Turns the lights off
         self.location.get_device_op('bathroom_light', 'turn_off')(self.name)
 
         # Go to the kitchen
         self.go_to_room('kitchen')
-        yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
+        yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
 
         # Make coffee
-        yield self.env.timeoutRequest(2 + truncexp(1.5, None, 3)) # 2-5 minutes
+        yield self.env.timeoutRequest(2 + truncexp(1.5, 3)) # 2-5 minutes
 
         
     def prepares_to_leave_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the bedroom
         if(self.go_to_room('bedroom')):
-            yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
+            yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
 
         ## Turns the lights on
         lightIsOn = False
@@ -81,7 +80,7 @@ class ScenarioInhabitant(im.Inhabitant):
             lightIsOn = True
 
         # Put on clothes and grab stuff
-        yield self.env.timeoutRequest(3 + truncexp(2, None, 4)) # 3-7 minutes
+        yield self.env.timeoutRequest(3 + truncexp(2, 4)) # 3-7 minutes
 
         ## Turns the lights off
         if(lightIsOn):
@@ -89,10 +88,10 @@ class ScenarioInhabitant(im.Inhabitant):
 
         # Go to the door
         self.go_to_room('hallway')
-        yield self.env.timeoutRequest(2 + truncexp(0.5, None, 1)) # 2-3 minutes
+        yield self.env.timeoutRequest(2 + truncexp(0.5, 1)) # 2-3 minutes
 
         # Put on shoes
-        yield self.env.timeoutRequest(1 + truncexp(0.5, None, 1)) # 1-2 minutes
+        yield self.env.timeoutRequest(1 + truncexp(0.5, 1)) # 1-2 minutes
 
     def left_state(self) -> Generator[simpy.Event, None, None]:
         '''Left state must be prolonged'''
@@ -104,22 +103,22 @@ class ScenarioInhabitant(im.Inhabitant):
         self.go_to_room('hallway')
         
         # Put off shoes
-        yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
+        yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
 
         # Go to the bedroom
         self.go_to_room('bedroom')
 
         # Put off clothes and put on home clothes
-        yield self.env.timeoutRequest(3 + truncexp(2, None, 4)) # 3-7 minutes
+        yield self.env.timeoutRequest(3 + truncexp(2, 4)) # 3-7 minutes
 
     def relaxes_state(self) -> Generator[simpy.Event, None, None]:
         '''Relaxes state must be cut short'''
         # Go to the living room
         if(self.go_to_room('livingroom')):
-            yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
+            yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
 
         # Sit on the couch
-        yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
+        yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
         
         ## Turn on the TV
         self.location.get_device_op('livingroom_tv', 'turn_on')(self.name)
@@ -128,7 +127,7 @@ class ScenarioInhabitant(im.Inhabitant):
         try:
             while True:
                 # Will be cut short by stateEnd.max
-                yield self.env.timeoutRequest(truncexp(15, None, 30)) # 0-30 minutes
+                yield self.env.timeoutRequest(truncexp(15, 30)) # 0-30 minutes
         finally:
             ## Turn off the TV
             self.location.get_device_op('livingroom_tv', 'turn_off')(self.name)
@@ -137,19 +136,19 @@ class ScenarioInhabitant(im.Inhabitant):
         '''Reads state must be cut short'''
         # Go to the livingroom
         if(self.go_to_room('livingroom')):
-            yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
+            yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
 
         ## Turn on the livingroom light
         self.location.get_device_op('livingroom_light', 'turn_on')(self.name)
 
         # Sit on the couch
-        yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
+        yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
 
         # Read a book
         try:
             while True:
                 # Will be cut short by stateEnd.max
-                yield self.env.timeoutRequest(truncexp(10, None, 25)) # 0-25 minutes
+                yield self.env.timeoutRequest(truncexp(10, 25)) # 0-25 minutes
         finally:
             ## Turn off the livingroom light
             self.location.get_device_op('livingroom_light', 'turn_off')(self.name)
@@ -158,33 +157,33 @@ class ScenarioInhabitant(im.Inhabitant):
         '''Scrolls through his/her phone in the bedroom'''
         # Go to the bedroom
         if(self.go_to_room('bedroom')):
-            yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
+            yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
 
         # Lay on the bed
-        yield self.env.timeoutRequest(0.5 + truncexp(0.20, None, 0.4)) # 0.5-0.9 minutes
+        yield self.env.timeoutRequest(0.5 + truncexp(0.20, 0.4)) # 0.5-0.9 minutes
 
         # Scroll through phone
         while True:
             # Will be cut short by stateEnd.max
-            yield self.env.timeoutRequest(truncexp(20, None, 40)) # 0-40 minutes
+            yield self.env.timeoutRequest(truncexp(20, 40)) # 0-40 minutes
 
     def works_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the office
         if(self.go_to_room('office')):
-            yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
+            yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
 
         ## Sometimes works with lights on
         if(random.random() < 0.8):
             self.location.get_device_op('office_light', 'turn_on')(self.name)
 
         # Sit on the chair
-        yield self.env.timeoutRequest(0.2 + truncexp(0.25, None, 0.5)) # 0.2-0.5 minutes
+        yield self.env.timeoutRequest(0.2 + truncexp(0.25, 0.5)) # 0.2-0.5 minutes
 
         # Work
         try:
             while True:
                 # Will be cut short by stateEnd.max
-                yield self.env.timeoutRequest(truncexp(30, None, 60)) # 0-60 minutes
+                yield self.env.timeoutRequest(truncexp(30, 60)) # 0-60 minutes
         finally:
             ## Turn off the office light
             self.location.get_device_op('office_light', 'turn_off')(self.name)
@@ -192,14 +191,14 @@ class ScenarioInhabitant(im.Inhabitant):
     def prepares_food_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the kitchen
         if(self.go_to_room('kitchen')):
-            yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
+            yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
 
         ## Turn on the kitchen light
         if self.env.timeslot.Hour > 19:
             self.location.get_device_op('kitchen_light', 'turn_on')(self.name)
 
         # Prepare food
-        yield self.env.timeoutRequest(20 + truncexp(12.5, None, 25)) # 20-45 minutes
+        yield self.env.timeoutRequest(20 + truncexp(12.5, 25)) # 20-45 minutes
 
         ## Turn off the kitchen light
         self.location.get_device_op('kitchen_light', 'turn_off')(self.name)
@@ -207,17 +206,17 @@ class ScenarioInhabitant(im.Inhabitant):
     def eats_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the livingroom
         if(self.go_to_room('livingroom')):
-            yield self.env.timeoutRequest(0.5 + truncexp(0.25, None, 0.5)) # 0.5-1 minutes
+            yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
 
         ## Turn on the livingroom light
         if self.env.timeslot.Hour > 19:
             self.location.get_device_op('livingroom_light', 'turn_on')(self.name)
 
         # Sit on a chair
-        yield self.env.timeoutRequest(0.3 + truncexp(0.30, None, 0.6)) # 0.3-1.1 minutes
+        yield self.env.timeoutRequest(0.3 + truncexp(0.30, 0.6)) # 0.3-1.1 minutes
 
         # Eat
-        yield self.env.timeoutRequest(15 + truncexp(7.5, None, 15)) # 15-30 minutes
+        yield self.env.timeoutRequest(15 + truncexp(7.5, 15)) # 15-30 minutes
 
         ## Turn off the livingroom light
         self.location.get_device_op('livingroom_light', 'turn_off')(self.name)
@@ -232,7 +231,7 @@ class ScenarioInhabitant(im.Inhabitant):
         if(currentTimeslot.Hour < 6):
             # Sleeps until 6:00-6:15
             self.state = im.InhabitantState.SLEEPS
-            end = currentTimeslot._replace(Hour = 6, Minute = truncexp(7.5, None, 15)).to_minutes()
+            end = currentTimeslot._replace(Hour = 6, Minute = truncexp(7.5, 15)).to_minutes()
             self.stateEnd = im.stateEnd(end, None)
 
         elif(currentTimeslot.Hour == 6):
@@ -279,11 +278,19 @@ class ScenarioInhabitant(im.Inhabitant):
                     break
 
             endMax = currentTimeslot._replace(Hour = 21, Minute = 30).to_minutes()
-            if endMax - self.env.now > 65:
-                nextStateEnd = self.env.now + truncexp((endMax - self.env.now) / 2, 60, endMax - self.env.now)
+            if endMax - self.env.now > 60:
+                # Activity lasts at least 1 hour
+                while True:
+                    nextStateEnd = self.env.now + truncexp((endMax - self.env.now) / 2, endMax - self.env.now)
+                    if nextStateEnd - self.env.now > 60:
+                        break
+                # nextStateEnd = self.env.now + truncexp((endMax - self.env.now) / 2, 60, endMax - self.env.now)
             else:
-                # TODO: Last activity too short?
-                nextStateEnd = self.env.now + truncexp((endMax - self.env.now) / 2, None, 60)
+                # Activity lasts at lest 15 minutes
+                while True:
+                    nextStateEnd = self.env.now + truncexp((endMax - self.env.now) / 2, 60)
+                    if nextStateEnd - self.env.now > 15:
+                        break
             self.stateEnd = im.stateEnd(None, nextStateEnd)
 
         elif(currentTimeslot.Hour == 21):
@@ -301,7 +308,7 @@ class ScenarioInhabitant(im.Inhabitant):
         elif((currentTimeslot.Hour == 22 and currentTimeslot.Minute >= 25) or currentTimeslot.Hour >= 23):
             # Sleeps until 6:00-6:15
             self.state = im.InhabitantState.SLEEPS
-            end = currentTimeslot._replace(Hour = 6, Minute = truncexp(7.5, None, 15)).to_minutes() + 24*60
+            end = currentTimeslot._replace(Hour = 6, Minute = truncexp(7.5, 15)).to_minutes() + 24*60
             self.stateEnd = im.stateEnd(end, None)
 
         # Current state
@@ -319,7 +326,7 @@ class ScenarioInhabitant(im.Inhabitant):
         if(currentTimeslot.Hour < 8):
             # Sleeps until 8:00-9:30
             self.state = im.InhabitantState.SLEEPS
-            end = currentTimeslot._replace(Hour = 8, Minute = truncexp(45, None, 90)).to_minutes()
+            end = currentTimeslot._replace(Hour = 8, Minute = truncexp(45, 90)).to_minutes()
             self.stateEnd = im.stateEnd(end, None)
 
         elif(currentTimeslot.Hour >= 8 and currentTimeslot.Hour <= 9):

@@ -158,7 +158,7 @@ class Inhabitant:
                     # (if stateEnd.min is set)
                     if self.stateEnd.min != None and self.env.now < self.stateEnd.min:
                         minMaxDiff = self.stateEnd.max - self.stateEnd.min
-                        end = truncexp(minMaxDiff / 2, 0, minMaxDiff) + self.stateEnd.min
+                        end = truncexp(minMaxDiff / 2, minMaxDiff) + self.stateEnd.min
                         yield self.env.timeout(end - self.env.now)
                     break
 

@@ -17,19 +17,11 @@ def truncnorm(mean: float, std: float, min: Optional[float], max: Optional[float
 
     return result
 
-def truncexp(mean: float, min: Optional[float], max: Optional[float]) -> float:
+def truncexp(mean: float, max: Optional[float]) -> float:
     '''Truncated exponential distribution'''
     result = random.expovariate(1/mean)
 
-    if min != None and max != None:
-        if min >= max:
-            raise ValueError(f"min ({min}) must be smaller than max ({max})!")
-        while result < min or result > max:
-            result = random.expovariate(1/mean)
-    elif min != None:
-        while result < min:
-            result = random.expovariate(1/mean)
-    elif max != None:
+    if max != None:
         while result > max:
             result = random.expovariate(1/mean)
 
