@@ -1,10 +1,10 @@
 import simpy
-import random
 import enum
 from typing import Optional, Generator, NamedTuple, Dict, Callable
-import homeModel as hm
-from environment import Environment, TimeoutRequest
-from utils import truncnorm, truncexp
+
+from Simulation import homeModel as hm
+from Simulation.environment import Environment, TimeoutRequest
+from Simulation.utils import truncnorm, truncexp
 
 
 class InhabitantState(enum.Enum):

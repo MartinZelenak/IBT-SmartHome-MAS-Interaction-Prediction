@@ -1,6 +1,7 @@
 from typing import Dict, Callable
-from environment import Environment
-from deviceModels import SmartDevice
+
+from Simulation.environment import Environment
+from Simulation.deviceModels import SmartDevice
 
 class Room:
     def __init__(self, env: Environment, name: str, temperature: float = 20) -> None:

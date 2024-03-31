@@ -1,5 +1,6 @@
 from typing import Callable, Dict
-from environment import Environment
+
+from Simulation.environment import Environment
 
 class SmartDevice:
     def __init__(self, env: Environment, name: str) -> None:

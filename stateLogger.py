@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional, Generator
-import os
 import simpy
-from environment import Environment, TimeSlot
-from homeModel import Home, Room
-from deviceModels import SmartLight
-from inhabitantModel import Inhabitant
+
+from Simulation.environment import Environment, TimeSlot
+from Simulation.deviceModels import SmartLight
+from Simulation.inhabitantModel import Inhabitant
 
 @dataclass
 class TimeSlotState:
@@ -25,7 +24,7 @@ class StateLogger:
     If the file already exists, logs will be appended without a header.
 
     Logs are saved in the following format:
-    Minute,Hour,Day,Month,Year,Location,Device1_on,Device2_on,...,InhabitantActions[device_number:action_number;...;device_number:action_number]
+    Minute,Hour,DayOfWeek,Day,Month,Year,Location,Device1_on,Device2_on,...,InhabitantActions[device_number:action_number;...;device_number:action_number]
     - Location: number of the room in the list of rooms in the home (starts from 1)
     - device_number: number of the device in the list of devices being logged (starts from 1)
     - action_number: number of the action the inhabitant performed with the device (starts from 1)'''
