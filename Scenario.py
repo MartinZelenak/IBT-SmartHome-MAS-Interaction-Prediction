@@ -1,12 +1,13 @@
 import simpy
 import random
 from typing import Generator, List
-import inhabitantModel as im
-import homeModel as hm
-import deviceModels as dm
-from environment import Environment, TimeSlot
-from utils import truncnorm, truncexp
-from stateLogger import StateLogger
+
+from . import inhabitantModel as im
+from . import homeModel as hm
+from . import deviceModels as dm
+from .environment import Environment, TimeSlot
+from .utils import truncnorm, truncexp
+from .stateLogger import StateLogger
 
 ROOMS = ['livingroom', 'kitchen', 'bathroom', 'bedroom', 'office', 'hallway', 'outside']
 

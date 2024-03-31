@@ -1,6 +1,6 @@
 # SmartHome-Inhabitant-Simulation
-run simulation:  
-<code>python3 Scenario.py</code>  
+run simulation (from outside the project folder):  
+<code>python3 -m \<folder name>.Scenario</code>  
 Simulation parameters can be adjusted via constants in Scenario.py
 
 ## Files  

@@ -2,9 +2,9 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional, Generator
 import simpy
 
-from Simulation.environment import Environment, TimeSlot
-from Simulation.deviceModels import SmartLight
-from Simulation.inhabitantModel import Inhabitant
+from .environment import Environment, TimeSlot
+from .deviceModels import SmartLight
+from .inhabitantModel import Inhabitant
 
 @dataclass
 class TimeSlotState:
