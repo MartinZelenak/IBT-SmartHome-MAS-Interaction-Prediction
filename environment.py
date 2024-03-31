@@ -11,7 +11,8 @@ class TimeSlot(NamedTuple):
     Year: int
 
     def day_of_week(self) -> int:
-        return (self.Day - 1) % 7 + 1
+        total_days = (self.Year - 1) * 365 + (self.Month - 1) * 31 + (self.Day - 1)
+        return (total_days % 7) + 1
 
     def __str__(self):
         return f'{self.Hour:02}:{int(self.Minute):02} {(self.Day):02}.{self.Month:02}.{self.Year:04}'
@@ -139,10 +140,10 @@ class Environment(simpy.Environment):
         return TimeSlot.from_minutes(self.now)
 
     def day_of_week(self) -> int:
-        return int((self.now // (60*24)) % 7 + 1)
+        return self.timeslot.day_of_week()
 
     def is_weekend(self) -> bool:
-        return int((self.now // (60*24)) % 7 + 1) > 5
+        return self.timeslot.day_of_week() > 5
     
     def timeoutUntil(self, time: TimeSlot) -> simpy.Event:
         return self.timeout(time.to_minutes() - self.now)
