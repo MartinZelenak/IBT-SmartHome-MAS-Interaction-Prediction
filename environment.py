@@ -133,6 +133,7 @@ class Environment(simpy.Environment):
     def __init__(self, initial_time = 0):
         super().__init__(initial_time)
         self.home = get_home()(self)
+        self.inhabitans = []
         self.eventHandler = EventHandler()
 
     @property

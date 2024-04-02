@@ -49,6 +49,7 @@ class Inhabitant:
                  name: str,
                  initial_state: InhabitantState = InhabitantState.UNKNOWN) -> None:
         self.env: Environment = env
+        self.env.inhabitans.append(self)
         self.state: InhabitantState = initial_state
         self.name: str = name
         self.location: hm.Room | None = None
