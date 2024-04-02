@@ -3,7 +3,7 @@ from typing import NamedTuple, List, Callable, Optional, Any
 
 from .event import EventHandler
 
-class TimeSlot(NamedTuple):
+class Time(NamedTuple):
     Minute: float
     Hour: int
     Day: int
@@ -17,9 +17,9 @@ class TimeSlot(NamedTuple):
     def __str__(self):
         return f'{self.Hour:02}:{int(self.Minute):02} {(self.Day):02}.{self.Month:02}.{self.Year:04}'
 
-    def __add__(self, other: 'TimeSlot | float | int'):
+    def __add__(self, other: 'Time | float | int'):
         if isinstance(other, float) or isinstance(other, int):
-            other = TimeSlot.from_minutes(other)
+            other = Time.from_minutes(other)
         
         minute = self.Minute + other.Minute
         hour = self.Hour + other.Hour
@@ -43,11 +43,11 @@ class TimeSlot(NamedTuple):
             month -= 12
             year += 1
 
-        return TimeSlot(minute, hour, day, month, year)
+        return Time(minute, hour, day, month, year)
 
-    def __sub__(self, other: 'TimeSlot | float | int'):
+    def __sub__(self, other: 'Time | float | int'):
         if isinstance(other, float) or isinstance(other, int):
-            other = TimeSlot.from_minutes(other)
+            other = Time.from_minutes(other)
         
         minute = self.Minute - other.Minute
         hour = self.Hour - other.Hour
@@ -71,29 +71,29 @@ class TimeSlot(NamedTuple):
             month += 12
             year -= 1
 
-        return TimeSlot(minute, hour, day, month, year)
+        return Time(minute, hour, day, month, year)
 
-    def __lt__(self, other: 'TimeSlot | float | int'):
+    def __lt__(self, other: 'Time | float | int'):
         if isinstance(other, float) or isinstance(other, int):
-            other = TimeSlot.from_minutes(other)
+            other = Time.from_minutes(other)
         return self.to_minutes() < other.to_minutes()
 
-    def __gt__(self, other: 'TimeSlot | float | int'):
+    def __gt__(self, other: 'Time | float | int'):
         if isinstance(other, float) or isinstance(other, int):
-            other = TimeSlot.from_minutes(other)
+            other = Time.from_minutes(other)
         return self.to_minutes() > other.to_minutes()
 
-    def __eq__(self, other: 'TimeSlot | float | int'):
+    def __eq__(self, other: 'Time | float | int'):
         if isinstance(other, float) or isinstance(other, int):
-            other = TimeSlot.from_minutes(other)
+            other = Time.from_minutes(other)
         return self.to_minutes() == other.to_minutes()
 
     def to_minutes(self):
         return self.Minute + self.Hour * 60 + (self.Day - 1) * 24 * 60 + (self.Month - 1) * 31 * 24 * 60 + (self.Year - 1) * 12 * 31 * 24 * 60
     
     @staticmethod
-    def from_minutes(min: float | int) -> 'TimeSlot':
-        return TimeSlot(
+    def from_minutes(min: float | int) -> 'Time':
+        return Time(
                 Minute = min % 60,
                 Hour = int((min // 60) % 24), 
                 Day = int((min // (60*24)) % 31 + 1), 
@@ -137,8 +137,8 @@ class Environment(simpy.Environment):
         self.eventHandler = EventHandler()
 
     @property
-    def timeslot(self) -> TimeSlot:
-        return TimeSlot.from_minutes(self.now)
+    def timeslot(self) -> Time:
+        return Time.from_minutes(self.now)
 
     def day_of_week(self) -> int:
         return self.timeslot.day_of_week()
@@ -146,7 +146,7 @@ class Environment(simpy.Environment):
     def is_weekend(self) -> bool:
         return self.timeslot.day_of_week() > 5
     
-    def timeoutUntil(self, time: TimeSlot) -> simpy.Event:
+    def timeoutUntil(self, time: Time) -> simpy.Event:
         return self.timeout(time.to_minutes() - self.now)
     
     def timeoutRequest(self, delay: float | int, value: Optional[Any] = None) -> simpy.Event:

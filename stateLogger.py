@@ -2,13 +2,13 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional, Generator
 import simpy
 
-from .environment import Environment, TimeSlot
+from .environment import Environment, Time
 from .deviceModels import SmartLight
 from .inhabitantModel import Inhabitant
 
 @dataclass
 class TimeSlotState:
-    StartTime: TimeSlot
+    StartTime: Time
     DayOfWeek: int                              # 1: Monday, 7: Sunday
     InhabitantStartLocation: Optional[int]      # Number of the location where inhabitant was at the start of the time slot
     DevicesStates: List[bool]                   # Devices on(True)/off(False) states
