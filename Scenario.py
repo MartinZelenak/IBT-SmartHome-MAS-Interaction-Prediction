@@ -5,9 +5,7 @@ from . import homeModel as hm
 from . import deviceModels as dm
 from .environment import Environment, Time
 from .stateLogger import StateLogger
-from .inhabitants.stochastic import StochasticInhabitant
-
-ROOMS = ['livingroom', 'kitchen', 'bathroom', 'bedroom', 'office', 'hallway', 'outside']
+from .inhabitants.stochastic import StochasticInhabitant, ROOMS
 
 SIM_START = Time(Minute=0, Hour=0, Day=1, Month=1, Year=1).to_minutes()
 SIM_END   = Time(Minute=0, Hour=0, Day=2, Month=1, Year=1).to_minutes()

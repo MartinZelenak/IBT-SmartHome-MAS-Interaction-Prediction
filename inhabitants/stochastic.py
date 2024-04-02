@@ -6,6 +6,8 @@ from .. import inhabitantModel as im
 from ..environment import Environment
 from ..utils import truncnorm, truncexp
 
+ROOMS = ['livingroom', 'kitchen', 'bathroom', 'bedroom', 'office', 'hallway', 'outside']
+
 class StochasticInhabitant(im.Inhabitant):
     def __init__(self, env: Environment, name: str) -> None:
         super().__init__(env, name)
