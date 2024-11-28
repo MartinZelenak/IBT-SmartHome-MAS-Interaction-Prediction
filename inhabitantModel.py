@@ -1,10 +1,11 @@
-import simpy
 import enum
-from typing import Optional, Generator, NamedTuple, Dict, Callable
+from typing import Callable, Dict, Generator, NamedTuple, Optional
+
+import simpy
 
 from . import homeModel as hm
 from .environment import Environment, TimeoutRequest
-from .utils import truncnorm, truncexp
+from .utils import truncexp, truncnorm
 
 
 class InhabitantState(enum.Enum):
@@ -71,8 +72,14 @@ class Inhabitant:
         }
         self.stateEnd: stateEnd = stateEnd(None, None)
     
-    def go_to_room(self, room_name: str) -> bool:
-        '''Returns True if the inhabitant moved to the room, False otherwise.'''
+    def is_in_room(self, room_name: str) -> bool:
+        '''Returns True if inhabitant is in given room. False otherwise'''
+        return self.location and self.location.name == room_name
+
+    def change_room(self, room_name: str) -> bool:
+        '''Returns True if the inhabitant moved to the room, False otherwise.
+        Also triggers location changed event
+        '''
         if not self.location or self.location.name != room_name:
             self.location = self.env.home.go_to_room(room_name, self.name)
             return True

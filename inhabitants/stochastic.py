@@ -1,10 +1,11 @@
-import simpy
 import random
 from typing import Generator
 
+import simpy
+
 from .. import inhabitantModel as im
 from ..environment import Environment
-from ..utils import truncnorm, truncexp
+from ..utils import truncexp, truncnorm
 
 ROOMS = ['livingroom', 'kitchen', 'bathroom', 'bedroom', 'office', 'hallway', 'outside']
 
@@ -15,8 +16,9 @@ class StochasticInhabitant(im.Inhabitant):
     def sleeps_state(self) -> Generator[simpy.Event, None, None]:
         '''Sleeps state must be prolonged'''
         # Go to the bedroom
-        if(self.go_to_room('bedroom')):
+        if(not self.is_in_room('bedroom')):
             yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
+            self.change_room('bedroom')
 
         ## Turns the lights off
         self.location.get_device_op('bedroom_light', 'turn_off')(self.name)
@@ -38,8 +40,9 @@ class StochasticInhabitant(im.Inhabitant):
             self.location.get_device_op('bedroom_light', 'turn_off')(self.name)
 
         # Go to the bathroom
-        if(self.go_to_room('bathroom')):
+        if(not self.is_in_room('bathroom')):
             yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.25-0.5 minutes
+            self.change_room('bathroom')
 
         ## Turns the lights on
         self.location.get_device_op('bathroom_light', 'turn_on')(self.name)
@@ -51,8 +54,8 @@ class StochasticInhabitant(im.Inhabitant):
         self.location.get_device_op('bathroom_light', 'turn_off')(self.name)
 
         # Go to the kitchen
-        self.go_to_room('kitchen')
         yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
+        self.change_room('kitchen')
 
         # Make coffee
         yield self.env.timeoutRequest(2 + truncexp(1.5, 3)) # 2-5 minutes
@@ -60,8 +63,9 @@ class StochasticInhabitant(im.Inhabitant):
         
     def prepares_to_leave_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the bedroom
-        if(self.go_to_room('bedroom')):
+        if(not self.is_in_room('bedroom')):
             yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
+            self.change_room('bedroom')
 
         ## Turns the lights on
         lightIsOn = False
@@ -77,26 +81,28 @@ class StochasticInhabitant(im.Inhabitant):
             self.location.get_device_op('bedroom_light', 'turn_off')(self.name)
 
         # Go to the door
-        self.go_to_room('hallway')
         yield self.env.timeoutRequest(2 + truncexp(0.5, 1)) # 2-3 minutes
+        self.change_room('hallway')
 
         # Put on shoes
         yield self.env.timeoutRequest(1 + truncexp(0.5, 1)) # 1-2 minutes
 
     def left_state(self) -> Generator[simpy.Event, None, None]:
         '''Left state must be prolonged'''
-        self.go_to_room('outside')
+        yield self.env.timeoutRequest(0.1)
+        self.change_room('outside')
         yield self.env.timeoutRequest(0)
 
     def arrives_state(self) -> Generator[simpy.Event, None, None]:
         # Enter the hallway
-        self.go_to_room('hallway')
+        self.change_room('hallway')
         
         # Put off shoes
         yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
 
         # Go to the bedroom
-        self.go_to_room('bedroom')
+        yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
+        self.change_room('bedroom')
 
         # Put off clothes and put on home clothes
         yield self.env.timeoutRequest(3 + truncexp(2, 4)) # 3-7 minutes
@@ -104,8 +110,9 @@ class StochasticInhabitant(im.Inhabitant):
     def relaxes_state(self) -> Generator[simpy.Event, None, None]:
         '''Relaxes state must be cut short'''
         # Go to the living room
-        if(self.go_to_room('livingroom')):
+        if(not self.is_in_room('livingroom')):
             yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
+            self.change_room('livingroom')
 
         # Sit on the couch
         yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
@@ -125,8 +132,9 @@ class StochasticInhabitant(im.Inhabitant):
     def reads_state(self) -> Generator[simpy.Event, None, None]:
         '''Reads state must be cut short'''
         # Go to the livingroom
-        if(self.go_to_room('livingroom')):
+        if(not self.is_in_room('livingroom')):
             yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
+            self.change_room('livingroom')
 
         ## Turn on the livingroom light
         self.location.get_device_op('livingroom_light', 'turn_on')(self.name)
@@ -146,8 +154,9 @@ class StochasticInhabitant(im.Inhabitant):
     def does_hobby_state(self) -> Generator[simpy.Event, None, None]:
         '''Scrolls through his/her phone in the bedroom'''
         # Go to the bedroom
-        if(self.go_to_room('bedroom')):
+        if(not self.is_in_room('bedroom')):
             yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
+            self.change_room('bedroom')
 
         # Lay on the bed
         yield self.env.timeoutRequest(0.5 + truncexp(0.20, 0.4)) # 0.5-0.9 minutes
@@ -159,8 +168,9 @@ class StochasticInhabitant(im.Inhabitant):
 
     def works_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the office
-        if(self.go_to_room('office')):
+        if(not self.is_in_room('office')):
             yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
+            self.change_room('office')
 
         ## Sometimes works with lights on
         if(random.random() < 0.8):
@@ -180,8 +190,9 @@ class StochasticInhabitant(im.Inhabitant):
 
     def prepares_food_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the kitchen
-        if(self.go_to_room('kitchen')):
+        if(not self.is_in_room('kitchen')):
             yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
+            self.change_room('kitchen')
 
         ## Turn on the kitchen light
         if self.env.timeslot.Hour > 19:
@@ -195,8 +206,9 @@ class StochasticInhabitant(im.Inhabitant):
 
     def eats_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the livingroom
-        if(self.go_to_room('livingroom')):
+        if(not self.is_in_room('livingroom')):
             yield self.env.timeoutRequest(0.5 + truncexp(0.25, 0.5)) # 0.5-1 minutes
+            self.change_room('livingroom')
 
         ## Turn on the livingroom light
         if self.env.timeslot.Hour > 19:
@@ -235,7 +247,11 @@ class StochasticInhabitant(im.Inhabitant):
                 endMax = currentTimeslot._replace(Hour = 7, Minute = 15).to_minutes()
                 self.stateEnd = im.stateEnd(endMin, endMax)
             else:
+                # Leaves until 16:00 - 16:45
                 self.state = im.InhabitantState.LEFT
+                endMin = currentTimeslot._replace(Hour = 16, Minute = 0).to_minutes()
+                endMax = currentTimeslot._replace(Hour = 16, Minute = 45).to_minutes()
+                self.stateEnd = im.stateEnd(endMin, endMax)
         
         elif(currentTimeslot.Hour >= 7 and currentTimeslot.Hour <= 15):
             # Leaves until 16:00 - 16:45
@@ -276,7 +292,7 @@ class StochasticInhabitant(im.Inhabitant):
                         break
                 # nextStateEnd = self.env.now + truncexp((endMax - self.env.now) / 2, 60, endMax - self.env.now)
             else:
-                # Activity lasts at lest 15 minutes
+                # Activity lasts at least 15 minutes
                 while True:
                     nextStateEnd = self.env.now + truncexp((endMax - self.env.now) / 2, 60)
                     if nextStateEnd - self.env.now > 15:
@@ -319,7 +335,7 @@ class StochasticInhabitant(im.Inhabitant):
             end = currentTimeslot._replace(Hour = 8, Minute = truncexp(45, 90)).to_minutes()
             self.stateEnd = im.stateEnd(end, None)
 
-        elif(currentTimeslot.Hour >= 8 and currentTimeslot.Hour <= 9):
+        elif(currentTimeslot.Hour >= 8 and currentTimeslot.Hour <= 10):
             # Wakes up after Sleeping
             if(currentState == im.InhabitantState.SLEEPS):
                 self.state = im.InhabitantState.WAKES_UP

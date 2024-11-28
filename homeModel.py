@@ -1,12 +1,13 @@
-from typing import Dict, Callable
+from typing import Callable, Dict
 
-from .environment import Environment
 from .deviceModels import SmartDevice
+from .environment import Environment
+
 
 class Room:
     def __init__(self, env: Environment, name: str, temperature: float = 20) -> None:
         self.env = env
-        self.name = name if name else "Unnamed"
+        self.name = name or "Unnamed"
         self.temperature = temperature  # Celsius
         self.devices: Dict[str, SmartDevice] = {}
 
@@ -40,7 +41,7 @@ class Home:
         '''Returns the room with the given name. Publishes an event that the inhabitant went to the room.'''
         if room_name not in self.rooms:
             raise ValueError(f"Home does not have a room called {room_name}!")
-        self.env.eventHandler.publish("inhabitant_goes_to_room", inhabitant_name, room_name)
+        self.env.eventHandler.publish("inhabitant_changed_location", inhabitant_name, room_name)
         print(f"{inhabitant_name} | -> {room_name}")
         return self.rooms[room_name]
     

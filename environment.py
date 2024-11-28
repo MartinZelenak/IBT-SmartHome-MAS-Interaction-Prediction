@@ -1,7 +1,9 @@
+from typing import Any, Callable, List, NamedTuple, Optional
+
 import simpy
-from typing import NamedTuple, List, Callable, Optional, Any
 
 from .event import EventHandler
+
 
 class Time(NamedTuple):
     Minute: float
@@ -18,9 +20,9 @@ class Time(NamedTuple):
         return f'{self.Hour:02}:{int(self.Minute):02} {(self.Day):02}.{self.Month:02}.{self.Year:04}'
 
     def __add__(self, other: 'Time | float | int'):
-        if isinstance(other, float) or isinstance(other, int):
+        if isinstance(other, (float, int)):
             other = Time.from_minutes(other)
-        
+
         minute = self.Minute + other.Minute
         hour = self.Hour + other.Hour
         day = self.Day + other.Day
@@ -46,9 +48,9 @@ class Time(NamedTuple):
         return Time(minute, hour, day, month, year)
 
     def __sub__(self, other: 'Time | float | int'):
-        if isinstance(other, float) or isinstance(other, int):
+        if isinstance(other, (float, int)):
             other = Time.from_minutes(other)
-        
+
         minute = self.Minute - other.Minute
         hour = self.Hour - other.Hour
         day = self.Day - other.Day
@@ -74,17 +76,17 @@ class Time(NamedTuple):
         return Time(minute, hour, day, month, year)
 
     def __lt__(self, other: 'Time | float | int'):
-        if isinstance(other, float) or isinstance(other, int):
+        if isinstance(other, (float, int)):
             other = Time.from_minutes(other)
         return self.to_minutes() < other.to_minutes()
 
     def __gt__(self, other: 'Time | float | int'):
-        if isinstance(other, float) or isinstance(other, int):
+        if isinstance(other, (float, int)):
             other = Time.from_minutes(other)
         return self.to_minutes() > other.to_minutes()
 
     def __eq__(self, other: 'Time | float | int'):
-        if isinstance(other, float) or isinstance(other, int):
+        if isinstance(other, (float, int)):
             other = Time.from_minutes(other)
         return self.to_minutes() == other.to_minutes()
 
