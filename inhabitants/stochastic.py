@@ -4,14 +4,13 @@ from typing import Generator
 import simpy
 
 from .. import inhabitantModel as im
-from ..constants import ROOMS
 from ..environment import Environment
 from ..utils import truncexp, truncnorm
 
 
 class StochasticInhabitant(im.Inhabitant):
-    def __init__(self, env: Environment, name: str) -> None:
-        super().__init__(env, name)
+    def __init__(self, env: Environment, name: str, weekend_same_as_workday_behavior: bool = False) -> None:
+        super().__init__(env, name, weekend_same_as_workday_behavior)
 
     def sleeps_state(self) -> Generator[simpy.Event, None, None]:
         '''Sleeps state must be prolonged'''

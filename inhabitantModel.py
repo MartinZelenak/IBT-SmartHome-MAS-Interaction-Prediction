@@ -48,11 +48,13 @@ class Inhabitant:
     def __init__(self, 
                  env: Environment, 
                  name: str,
+                 weekend_same_as_workday_behavior: bool = False,
                  initial_state: InhabitantState = InhabitantState.UNKNOWN) -> None:
         self.env: Environment = env
         self.env.inhabitans.append(self)
-        self.state: InhabitantState = initial_state
         self.name: str = name
+        self.weekend_same_as_workday_behavior = weekend_same_as_workday_behavior
+        self.state: InhabitantState = initial_state
         self.location: hm.Room | None = None
         self.stateMethodMap: Dict[InhabitantState, Callable[[], Generator[simpy.Event, None, None]]] = {
             InhabitantState.SLEEPS: self.sleeps_state,
@@ -218,7 +220,7 @@ class Inhabitant:
             self.state = InhabitantState.UNKNOWN # Default state
             self.stateEnd = stateEnd(None, None) # Reset state end
             currentState = self.state
-            if self.env.is_weekend():
+            if self.env.is_weekend() and not self.weekend_same_as_workday_behavior:
                 eventGenerator = self.weekend_behavior()
                 weekendBehavior = True
             else:
