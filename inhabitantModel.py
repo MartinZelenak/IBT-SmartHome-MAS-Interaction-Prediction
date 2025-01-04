@@ -211,6 +211,8 @@ class Inhabitant:
         weekendBehavior = False
         workdayBehavior = False
         while True:
+            self.state = InhabitantState.UNKNOWN # Default state
+            self.stateEnd = stateEnd(None, None) # Reset state end
             currentState = self.state
             if self.env.is_weekend():
                 eventGenerator = self.weekend_behavior()

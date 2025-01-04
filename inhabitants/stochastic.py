@@ -228,8 +228,6 @@ class StochasticInhabitant(im.Inhabitant):
         # Next state logic
         currentTimeslot = self.env.timeslot
         currentState = self.state
-        self.state = im.InhabitantState.UNKNOWN # Default state
-        self.stateEnd = im.stateEnd(None, None) # Reset state end
         if(currentTimeslot.Hour < 6):
             # Sleeps until 6:00-6:15
             self.state = im.InhabitantState.SLEEPS
@@ -327,8 +325,6 @@ class StochasticInhabitant(im.Inhabitant):
         # Next state logic
         currentTimeslot = self.env.timeslot
         currentState = self.state
-        self.state = im.InhabitantState.UNKNOWN # Default state
-        self.stateEnd = im.stateEnd(None, None) # Reset state end
         if(currentTimeslot.Hour < 8):
             # Sleeps until 8:00-9:30
             self.state = im.InhabitantState.SLEEPS
