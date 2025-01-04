@@ -1,4 +1,4 @@
-from . import Scenario
+from . import Simulation
 
 if __name__ == "__main__":
-    Scenario.main()
+    Simulation.main()
