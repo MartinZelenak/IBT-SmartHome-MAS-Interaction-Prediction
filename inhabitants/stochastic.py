@@ -4,10 +4,10 @@ from typing import Generator
 import simpy
 
 from .. import inhabitantModel as im
+from ..constants import ROOMS
 from ..environment import Environment
 from ..utils import truncexp, truncnorm
 
-ROOMS = ['livingroom', 'kitchen', 'bathroom', 'bedroom', 'office', 'hallway', 'outside']
 
 class StochasticInhabitant(im.Inhabitant):
     def __init__(self, env: Environment, name: str) -> None:
