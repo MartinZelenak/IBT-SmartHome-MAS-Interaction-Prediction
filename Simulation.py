@@ -1,19 +1,20 @@
+import argparse
 from typing import Generator, List
 
 import simpy
 
 from . import deviceModels as dm
 from . import homeModel as hm
+from .constants import ROOMS
 from .environment import Environment, Time
-from .inhabitants.stochastic import ROOMS, StochasticInhabitant
+from .inhabitants.deterministic import DeterministicInhabitant
+from .inhabitants.stochastic import StochasticInhabitant
 from .stateLogger import EventStateLogger, PeriodicStateLogger, StateLogger
 
 SIM_START = Time(Minute=0, Hour=0, Day=1, Month=1, Year=1).to_minutes()
 SIM_END = Time(Minute=0, Hour=0, Day=1, Month=2, Year=1).to_minutes()
 
 LOG_TIME_INTERVAL = 5  # minutes # Log every LOG_TIME_INTERVAL minutes
-
-NUM_OF_INHABITANTS = 1
 
 def setup_home(env: Environment):
     for roomName in ROOMS:
@@ -33,6 +34,17 @@ def day_divider(env: Environment) -> Generator[simpy.Event, None, None]:
 
 
 def main():
+    # Command line arguments parsing
+    parser = argparse.ArgumentParser(description="Run the Simulation without MAS.")
+    parser.add_argument("-n", "--num_inhabitants", type=int, default=1, help="The number of inhabitants in the simulation")
+    parser.add_argument("-d", "--deterministic", action="store_true", help="Use deterministic inhabitant")
+    parser.add_argument("--no_weekend", action="store_true", help="Inhabitant uses only workday behavior (no weekend behavior)")
+    args = parser.parse_args()
+    num_inhabitants= args.num_inhabitants
+    deterministic = args.deterministic
+    no_weekend = args.no_weekend
+    assert num_inhabitants > 0
+
     # Environment
     env = Environment(SIM_START)
     setup_home(env)
@@ -42,8 +54,12 @@ def main():
 
     # Inhabitants
     stateLoggers: List[StateLogger] = []
-    for i in range(1, NUM_OF_INHABITANTS + 1):
-        inhabitant = StochasticInhabitant(env, str(i))
+    for i in range(1, num_inhabitants + 1):
+        inhabitant: StochasticInhabitant | DeterministicInhabitant
+        if deterministic:
+             inhabitant = DeterministicInhabitant(env, str(i), no_weekend)
+        else:
+            inhabitant = StochasticInhabitant(env, str(i), no_weekend)
         inhabitant.location = env.home.rooms["bedroom"]  # Start in the bedroom
         env.process(inhabitant.behaviour())
 
