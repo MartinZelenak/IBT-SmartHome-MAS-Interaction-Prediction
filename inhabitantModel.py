@@ -165,8 +165,12 @@ class Inhabitant:
                     # States are extended if they are too short
                     # (if stateEnd.min is set)
                     if self.stateEnd.min != None and self.env.now < self.stateEnd.min:
+                        end: float
                         minMaxDiff = self.stateEnd.max - self.stateEnd.min
-                        end = truncexp(minMaxDiff / 2, minMaxDiff) + self.stateEnd.min
+                        if(minMaxDiff > 0.0001):
+                            end = truncexp(minMaxDiff / 2, minMaxDiff) + self.stateEnd.min
+                        else:
+                            end = self.stateEnd.max
                         yield self.env.timeout(end - self.env.now)
                     break
 
