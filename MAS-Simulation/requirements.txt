@@ -1,5 +1,0 @@
-simpy
-spade
-slixmpp
-torch
-pyyaml
