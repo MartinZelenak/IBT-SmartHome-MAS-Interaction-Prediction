@@ -1,0 +1,74 @@
+Simulation: 
+    start: 
+        minute: 0   # 0-59
+        hour: 0     # 0-23
+        day: 1      # 1-31
+        month: 1    # 1-12
+        year: 1     # 1-9999
+    end: 
+        minute: 0   # 0-59
+        hour: 0     # 0-23
+        day: 1      # 1-31
+        month: 1    # 1-12
+        year: 2     # 1-9999
+    log_interval: 5 # minutes
+    MAS_update_interval: 5 # minutes (determines size of time slot for prediction)
+    inhabitants: 3
+    inhabitants_logs: 
+        enabled: True
+        folder: ./logs
+
+    # Host must have unrestricted registration 
+    # (from this machine's IP address)
+    jabber_host: localhost
+
+    prediction_filter: 
+        # This sets all users' (inhabitants') device filters for all devices
+        enabled: True # If disabled, no actions will be generated from the predictions
+        threshold_off: 0.5 # If prediction <= threshold_off -> action = turn off
+        threshold_on: 0.5  # If prediction >= threshold_on -> action = turn on
+
+    TCP_relay_agent:
+        host_ip: localhost
+        host_port: 5007
+
+MAS:
+    prediction: 
+        model_params: 
+            type: LSTM # LSTM | RNN
+            hidden_size: 32
+            num_layers: 2
+            learning_rate: 0.001
+            sequence_length: 6
+        
+        load_model: False
+        save_model: True # Save the model when device agent stops and periodically
+        save_after_n_learning_steps: 100 # if 0 don't save periodically
+        models_folder: ./saved_models
+        predict_on_new_state: True # Predict when new state is received
+        periodic_prediction: 
+            # Disable when running in simulation (this is in real-time)
+            enabled: False
+            period: 300 # minutes
+    
+    # Python logging configuration
+    # See https://docs.python.org/3/library/logging.config.html#logging-config-dictschema
+    logging: 
+        version: 1
+        disable_existing_loggers: False
+        formatters: 
+            default: 
+                format: "%(name)s - %(levelname)s: %(message)s"
+        handlers: 
+            console: 
+                class: logging.StreamHandler
+                formatter: default
+        loggers: 
+            MAS: 
+                level: WARNING
+                handlers: 
+                    - console
+            spade: 
+                level: ERROR
+                handlers: 
+                    - console

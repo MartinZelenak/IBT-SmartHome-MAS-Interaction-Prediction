@@ -1,0 +1,6 @@
+torch
+lightning
+numpy
+pandas
+matplotlib
+ncps
