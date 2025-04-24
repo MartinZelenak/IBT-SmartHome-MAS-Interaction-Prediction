@@ -64,7 +64,7 @@ def main():
         env.process(inhabitant.behaviour())
 
         # Periodic State logger
-        logFilePath = f"./logs/inhabitant_{str(i)}.csv"
+        logFilePath = f"./logs/inhabitant_{str(i)}-{LOG_TIME_INTERVAL}min.csv"
         logger = PeriodicStateLogger(env, LOG_TIME_INTERVAL, logFilePath, inhabitant)
         env.eventHandler.subscribe("light_turned_on", logger.deviceTurnedOnHandler)
         env.eventHandler.subscribe("light_turned_off", logger.deviceTurnedOffHandler)

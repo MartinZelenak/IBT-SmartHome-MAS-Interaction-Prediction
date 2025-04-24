@@ -206,10 +206,12 @@ class Inhabitant:
                 pass
             # yield from stateYield
 
-    def workday_behavior(self) -> Generator[simpy.Event, None, None] | None:
+    def workday_behavior(self, currentState: InhabitantState) -> Generator[simpy.Event, None, None] | None:
+        self.state = InhabitantState.SLEEPS
         yield self.env.timeout(1)
 
-    def weekend_behavior(self) -> Generator[simpy.Event, None, None] | None:
+    def weekend_behavior(self, currentState: InhabitantState) -> Generator[simpy.Event, None, None] | None:
+        self.state = InhabitantState.SLEEPS
         yield self.env.timeout(1)
 
 
@@ -217,19 +219,20 @@ class Inhabitant:
         weekendBehavior = False
         workdayBehavior = False
         while True:
+            currentState = self.state
             self.state = InhabitantState.UNKNOWN # Default state
             self.stateEnd = stateEnd(None, None) # Reset state end
-            currentState = self.state
             if self.env.is_weekend() and not self.weekend_same_as_workday_behavior:
-                eventGenerator = self.weekend_behavior()
+                eventGenerator = self.weekend_behavior(currentState)
                 weekendBehavior = True
             else:
-                eventGenerator = self.workday_behavior()
+                eventGenerator = self.workday_behavior(currentState)
                 workdayBehavior = True
             
             if eventGenerator:
                 yield from eventGenerator
 
+            # TODO: Wait for next state change?
             # # Current state actions
             # # (if state changed or if behavior changed)
             # if currentState != self.state:

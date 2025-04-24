@@ -4,7 +4,7 @@ python3 Scenario.py
 python3 Interface_test.py
 
 # Run only simulation (no MAS)
-python3 -m Simulation.Scenario
+python3 -m Simulation
 
 # Configuration
 ./config.yaml

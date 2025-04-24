@@ -1,5 +1,5 @@
 import random
-from typing import Generator
+from typing import Generator, override
 
 import simpy
 
@@ -12,6 +12,7 @@ class StochasticInhabitant(im.Inhabitant):
     def __init__(self, env: Environment, name: str, weekend_same_as_workday_behavior: bool = False) -> None:
         super().__init__(env, name, weekend_same_as_workday_behavior)
 
+    @override
     def sleeps_state(self) -> Generator[simpy.Event, None, None]:
         '''Sleeps state must be prolonged'''
         # Go to the bedroom
@@ -24,6 +25,7 @@ class StochasticInhabitant(im.Inhabitant):
 
         yield self.env.timeoutRequest(0)
 
+    @override
     def wakes_up_state(self) -> Generator[simpy.Event, None, None]:
         if(self.env.is_weekend()):
             # Doesn't get up immediately
@@ -59,7 +61,7 @@ class StochasticInhabitant(im.Inhabitant):
         # Make coffee
         yield self.env.timeoutRequest(2 + truncexp(1.5, 3)) # 2-5 minutes
 
-        
+    @override    
     def prepares_to_leave_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the bedroom
         if(not self.is_in_room('bedroom')):
@@ -86,12 +88,14 @@ class StochasticInhabitant(im.Inhabitant):
         # Put on shoes
         yield self.env.timeoutRequest(1 + truncexp(0.5, 1)) # 1-2 minutes
 
+    @override
     def left_state(self) -> Generator[simpy.Event, None, None]:
         '''Left state must be prolonged'''
         yield self.env.timeoutRequest(0.1)
         self.change_room('outside')
         yield self.env.timeoutRequest(0)
 
+    @override
     def arrives_state(self) -> Generator[simpy.Event, None, None]:
         # Enter the hallway
         self.change_room('hallway')
@@ -106,6 +110,7 @@ class StochasticInhabitant(im.Inhabitant):
         # Put off clothes and put on home clothes
         yield self.env.timeoutRequest(3 + truncexp(2, 4)) # 3-7 minutes
 
+    @override
     def relaxes_state(self) -> Generator[simpy.Event, None, None]:
         '''Relaxes state must be cut short'''
         # Go to the living room
@@ -128,6 +133,7 @@ class StochasticInhabitant(im.Inhabitant):
             ## Turn off the TV
             self.location.get_device_op('livingroom_tv', 'turn_off')(self.name)
 
+    @override
     def reads_state(self) -> Generator[simpy.Event, None, None]:
         '''Reads state must be cut short'''
         # Go to the livingroom
@@ -150,6 +156,7 @@ class StochasticInhabitant(im.Inhabitant):
             ## Turn off the livingroom light
             self.location.get_device_op('livingroom_light', 'turn_off')(self.name)
 
+    @override
     def does_hobby_state(self) -> Generator[simpy.Event, None, None]:
         '''Scrolls through his/her phone in the bedroom'''
         # Go to the bedroom
@@ -165,6 +172,7 @@ class StochasticInhabitant(im.Inhabitant):
             # Will be cut short by stateEnd.max
             yield self.env.timeoutRequest(truncexp(20, 40)) # 0-40 minutes
 
+    @override
     def works_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the office
         if(not self.is_in_room('office')):
@@ -187,6 +195,7 @@ class StochasticInhabitant(im.Inhabitant):
             ## Turn off the office light
             self.location.get_device_op('office_light', 'turn_off')(self.name)
 
+    @override
     def prepares_food_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the kitchen
         if(not self.is_in_room('kitchen')):
@@ -203,6 +212,7 @@ class StochasticInhabitant(im.Inhabitant):
         ## Turn off the kitchen light
         self.location.get_device_op('kitchen_light', 'turn_off')(self.name)
 
+    @override
     def eats_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the livingroom
         if(not self.is_in_room('livingroom')):
@@ -223,10 +233,10 @@ class StochasticInhabitant(im.Inhabitant):
         self.location.get_device_op('livingroom_light', 'turn_off')(self.name)
 
 
-    def workday_behavior(self) -> Generator[simpy.Event, None, None] | None:
+    @override
+    def workday_behavior(self, currentState: im.InhabitantState) -> Generator[simpy.Event, None, None] | None:
         # Next state logic
         currentTimeslot = self.env.timeslot
-        currentState = self.state
         if(currentTimeslot.Hour < 6):
             # Sleeps until 6:00-6:15
             self.state = im.InhabitantState.SLEEPS
@@ -319,11 +329,10 @@ class StochasticInhabitant(im.Inhabitant):
             print(f'{self.name} | Workday: {self.env.timeslot} - {self.state}')
             
 
-
-    def weekend_behavior(self) -> Generator[simpy.Event, None, None] | None:
+    @override
+    def weekend_behavior(self, currentState: im.InhabitantState) -> Generator[simpy.Event, None, None] | None:
         # Next state logic
         currentTimeslot = self.env.timeslot
-        currentState = self.state
         if(currentTimeslot.Hour < 8):
             # Sleeps until 8:00-9:30
             self.state = im.InhabitantState.SLEEPS
