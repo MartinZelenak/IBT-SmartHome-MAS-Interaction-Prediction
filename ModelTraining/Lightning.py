@@ -112,7 +112,9 @@ def main():
     sequence_len = datamodule_config["sequence_len"]
 
     ## Model either gets the sequence or remembers it
-    assert not keep_hidden_state or sequence_len == 1, "Model either gets the whole sequence or remembers the information in hidden_state"
+    assert (
+        not keep_hidden_state or sequence_len == 1
+    ), f"Got keep_hidden_state <{'true' if keep_hidden_state else 'false'}> and sequence_length <{sequence_len}>. Model either gets the whole sequence or remembers the information in hidden_state!"
 
     learner = SequenceLearner(
         model,
@@ -146,7 +148,7 @@ def main():
         profiler=profiler,
         min_epochs=1,
         max_epochs=training_config["max_epochs"],
-        precision="16-mixed",
+        precision="32",
         log_every_n_steps=1,
     )
 
