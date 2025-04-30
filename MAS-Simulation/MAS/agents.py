@@ -8,6 +8,10 @@ from socket import socket, AF_INET, SOCK_STREAM
 from select import select
 import pickle
 
+from .data import DeviceFilter
+
+from .messages.spadeMessages import AddNewUserAgentMessage
+
 from .config import PredictionConfig, default_prediction_config
 from .data import *
 from .messages.spadeMessages import *
@@ -33,6 +37,7 @@ class BaseAgent(Agent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
+                msg = StopMessage.from_message(msg)
                 logger.debug(f'{self.agent.jid}: Stop message received with content: {msg.body}')
 
                 if msg.get_metadata('reply-with'):
@@ -105,12 +110,12 @@ class TCPRelayAgent(BaseAgent):
                 poller_events, _, _ = select([conn], [], [], 0)
 
             # Receive message
-            msg = None
+            msg: Message | None = None
             try:
                 msg_size = conn.recv(4)
                 data = conn.recv(int.from_bytes(msg_size, byteorder='big'))
 
-                msg: Message = pickle.loads(data)
+                msg = pickle.loads(data)
                 logger.debug(f'{self.agent.jid} Message received from client: {msg}')
             except Exception as e:
                 logger.error(f'{self.agent.jid} Error processing message: {e}')
@@ -171,7 +176,7 @@ class MainAgent(BaseAgent):
     class SendReadyMessageBehavior(OneShotBehaviour):
         async def run(self):
             msg = AgentReadyMessage()
-            msg.to = interface_jid
+            msg.to = str(interface_jid)
             msg.body = str(self.agent.jid)
             await self.send(msg)
             logger.debug(f'{self.agent.jid}: Ready message sent')
@@ -181,6 +186,7 @@ class MainAgent(BaseAgent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
+                msg = AddNewUserAgentMessage.from_message(msg)
                 logger.debug(f'{self.agent.jid}: Add new user received with content: {msg.body}')
 
                 fail_text = ''
@@ -216,6 +222,7 @@ class MainAgent(BaseAgent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
+                msg = AddNewDeviceAgentMessage.from_message(msg)
                 logger.debug(f'{self.agent.jid}: Add new device agent received with content: {msg.body}')
 
                 new_device_agent = None
@@ -250,9 +257,10 @@ class MainAgent(BaseAgent):
         '''Behavior to receive a message with a new state. 
         The state is then propagated to all device prediction agents.'''
         async def run(self):
-            msg: NewStateMessage = await self.receive(timeout=10)
+            msg = await self.receive(timeout=10)
             if msg:
-                logger.debug(f'{self.agent.jid}: New state received with content: {State.from_json(msg.body)}')
+                msg = NewStateMessage.from_message(msg)
+                logger.debug(f'{self.agent.jid}: New state received with content: {msg.State}')
 
                 for device_agent in self.get('device_agents'):
                     new_state_message = NewStateMessage()
@@ -279,6 +287,7 @@ class MainAgent(BaseAgent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
+                msg = TriggerPredictionMessage.from_message(msg)
                 logger.debug(f'{self.agent.jid}: Trigger predictions received with content: {msg.body}')
 
                 for device_agent in self.get('device_agents'):
@@ -299,6 +308,7 @@ class MainAgent(BaseAgent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
+                msg = PredictionMessage.from_message(msg)
                 logger.debug(f'{self.agent.jid}: Prediction received with content: {msg.body}')
 
                 for user_agent in self.get('user_agents'):
@@ -313,6 +323,7 @@ class MainAgent(BaseAgent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
+                msg = ActionMessage.from_message(msg)
                 logger.debug(f'{self.agent.jid}: Action received with content: {msg.body}')
 
                 msg.to = interface_jid
@@ -372,6 +383,7 @@ class UserAgent(BaseAgent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
+                msg = PredictionMessage.from_message(msg)
                 logger.debug(f'{self.agent.jid}: Prediction received with content: {msg.body}')
 
                 device_jid, pred = msg.body.split(' ')
@@ -401,9 +413,10 @@ class UserAgent(BaseAgent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
+                msg = SetDeviceFilterMessage.from_message(msg)
                 logger.debug(f'{self.agent.jid}: Set device filter received with content: {msg.body}')
 
-                msg_device_filter = DeviceFilter.from_json(msg.body)
+                msg_device_filter: DeviceFilter = msg.FilterSettings
 
                 device_filters = self.get('device_filters')
                 if msg_device_filter.Device_JID not in device_filters:
@@ -445,12 +458,13 @@ class DeviceAgent(BaseAgent):
     '''Agent used to receive state updates and send predictions to UserAgents.'''
     class ReceiveNewStateBehavior(CyclicBehaviour):
         async def run(self):
-            msg: NewStateMessage = await self.receive(timeout=10) # FIXME: Doesn't work with XMPP
+            msg = await self.receive(timeout=10)
             if msg:
+                msg = NewStateMessage.from_message(msg)
                 logger.debug(f'{self.agent.jid}: New state received with content: {msg.State}')
                 
                 # user locations, this device's state
-                state = list(msg.State.UserLocations.values()) # FIXME: Doesn't work with XMPP
+                state = list(msg.State.UserLocations.values())
                 if str(self.agent.jid) not in msg.State.DeviceStates:
                     logger.info(f'{self.agent.jid}: No state for this device in state update. Using last state.')
                     return
@@ -491,6 +505,7 @@ class DeviceAgent(BaseAgent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
+                msg = TriggerPredictionMessage.from_message(msg)
                 logger.debug(f'{self.agent.jid}: Trigger predictions received with content: {msg.body}')
                 self.agent.add_behaviour(self.agent.PredictBehavior())
 
@@ -515,7 +530,6 @@ class DeviceAgent(BaseAgent):
             # Learn from last prediction and current device state
             if self.get('learning'):
                 model.learn(state[-1])
-                pass
             else:
                 # Current prediction will be used next time
                 self.set('learning', True)
