@@ -46,7 +46,7 @@ def get_spade_metadata_from_xmpp_message(message: xmpp.Message) -> Dict[str, str
         key = child.getAttr('var')
         value = child.getTagData('value')
         metadata[key] = value
-    return metadata if metadata else None
+    return metadata or None
 
 class Message(xmpp.Message):
     '''A XMPP message with SPADE metadata.'''
@@ -91,12 +91,10 @@ class Message(xmpp.Message):
                 key = child.getAttr('var')
                 value = child.getTagData('value')
                 metadata[key] = value
-            return metadata if metadata else None
-        
+            return metadata or None
+
         field: xmpp.Node|None = x.getTag(name='field', attrs={'var': key})
-        if not field:
-            return None
-        return field.getTagData('value')
+        return field.getTagData('value') if field else None
     
     def expect_reply(self, reply_with: str):
         '''Set the reply-with metadata for the message.'''
@@ -217,14 +215,14 @@ class ActionMessage(Message):
             return None
         timeslot = TimeSlot(0,0,0)
         timeslot.Minute, timeslot.Hour, timeslot.DayOfWeek, device_jid, desired_state = body.split(' ')
-        
+
         # Check if desired_state string is an Int or Float
         try:
             desired_state = int(desired_state)
         except ValueError:
             desired_state = float(desired_state)
 
-        return (timeslot, device_jid, float(desired_state))
+        return timeslot, device_jid, desired_state
     
     @Action.setter
     def Action(self, action: Tuple[TimeSlot, str, int|float]):
@@ -233,14 +231,14 @@ class ActionMessage(Message):
     def match(self, message: xmpp.Message) -> bool:
         if not super().match(message):
             return False
-        
+
         try:
             timeslot = TimeSlot(0,0,0)
             timeslot.Minute, timeslot.Hour, timeslot.DayOfWeek, device_jid, desired_state = message.getBody().split(' ')
             if not device_jid or not desired_state:
                 raise ValueError()
             float(desired_state)
-        except:
+        except Exception:
             return False
-        
+
         return True

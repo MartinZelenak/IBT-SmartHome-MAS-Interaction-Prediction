@@ -317,7 +317,7 @@ class Interface():
                                    timeout: int = 25) -> bool:
         '''Send a new state to the system and wait for a response.'''
         if user_locations is None and device_states is None:
-            return
+            return True
 
         if user_locations:
             for jid, location in user_locations.items():

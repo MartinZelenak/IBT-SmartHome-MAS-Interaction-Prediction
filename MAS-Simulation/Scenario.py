@@ -2,7 +2,6 @@ import logging
 import logging.config
 import multiprocessing
 import multiprocessing.sharedctypes
-import multiprocessing.synchronize
 import os
 import pickle
 import socket
@@ -306,7 +305,7 @@ def MAS_print_device_stats():
         if isinstance(device, dm.SmartLight):
             print(f'{device.name} - Correct: {device.MAS_correct_actions}, Incorrect: {device.MAS_incorrect_actions}')
 
-if __name__ == '__main__':
+def main():
     try:
         # Environment
         env = Environment(SIM_START.to_minutes())
@@ -354,3 +353,6 @@ if __name__ == '__main__':
     MAS_stop()
     for stateLogger in stateLoggers:
         stateLogger.close()
+
+if __name__ == '__main__':
+    main()
