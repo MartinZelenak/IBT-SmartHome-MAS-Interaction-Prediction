@@ -1,0 +1,20 @@
+from typing import Any, Dict, List, Tuple, override
+
+import torch
+import torch.nn as nn
+
+from .modelBase import ModelBase
+
+
+class PerDeviceRNN(ModelBase):
+    def __init__(self, input_size, output_size, hidden_size, num_layers):
+        super(PerDeviceRNN, self).__init__(input_size, output_size, hidden_size, num_layers)
+
+        self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    @override
+    def forward(self, input: torch.Tensor, hidden_state: torch.Tensor | None = None) -> Tuple[torch.Tensor, torch.Tensor]:
+        out, hx = self.rnn.forward(input, hidden_state)
+        out = self.fc.forward(out)
+        return out, hx

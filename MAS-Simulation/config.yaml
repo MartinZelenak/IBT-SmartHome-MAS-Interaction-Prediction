@@ -35,11 +35,12 @@ Simulation:
 MAS:
     prediction: 
         model_params: 
-            type: LSTM # LSTM | RNN
-            hidden_size: 32
-            num_layers: 2
+            type: CfC # CfC | LSTM | RNN | FC
+            hidden_size: 16 # Number of neurons in one layer (total number of neurons for CfC)
+            num_layers: 5 # Number of layers. Unused for CfC
             learning_rate: 0.001
-            sequence_length: 6
+            sequence_length: 1
+            keep_hidden_state: True
         
         load_model: False
         save_model: True # Save the model when device agent stops and periodically

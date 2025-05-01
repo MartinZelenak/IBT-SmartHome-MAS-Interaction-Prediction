@@ -26,7 +26,7 @@ class PredictionConfig:
         )
     
 default_prediction_config = PredictionConfig(
-    model_params=ModelParams(MODEL_TYPES[0], 32, 2, 0.001, 6), 
+    model_params=ModelParams(MODEL_TYPES[0], 32, 2, 0.001, 1, True), 
     load_model=False, 
     save_model=False, 
     save_after_n_learning_steps=0, 
