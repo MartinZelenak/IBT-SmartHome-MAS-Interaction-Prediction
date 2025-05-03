@@ -33,12 +33,13 @@ from MAS.data import *
 #  <body>Message text</body>
 # </message>
 
-def get_spade_metadata_from_xmpp_message(message: xmpp.Message) -> Dict[str, str]|None:
+
+def get_spade_metadata_from_xmpp_message(message: xmpp.Message) -> Dict[str, str] | None:
     '''Get the spade metadata from an xmpp.Message.'''
     x: xmpp.Node|None = message.getTag(name='x')
     if not x:
         return None
-    metadata = {}
+    metadata: Dict[str, str] = {}
     children: List[xmpp.Node] = x.getChildren()
     for child in children:
         if child.getName() != 'field':
@@ -47,6 +48,7 @@ def get_spade_metadata_from_xmpp_message(message: xmpp.Message) -> Dict[str, str
         value = child.getTagData('value')
         metadata[key] = value
     return metadata or None
+
 
 class Message(xmpp.Message):
     '''A XMPP message with SPADE metadata.'''

@@ -9,7 +9,6 @@ from MAS.data import *
 ### 
 ### REPLY MESSAGES
 ### 
-# DELETE: ReplyMessage is not being used anywhere!
 class ReplyMessage(Message):
     def __init__(self, reply_to: Message):
         super().__init__()

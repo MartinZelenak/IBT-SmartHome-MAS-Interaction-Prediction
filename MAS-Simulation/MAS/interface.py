@@ -38,23 +38,23 @@ class Interface():
         if not isinstance(system_password, str):
             raise ValueError('Invalid system password value')
         
-        self.jid = str(interface_jid)
-        self.password = interface_password
-        self.system_jid = str(system_jid)
-        self.system_password = system_password
+        self.jid: str = str(interface_jid)
+        self.password: str = interface_password
+        self.system_jid: str = str(system_jid)
+        self.system_password: str = system_password
 
         self.environment_state = State()
-        self.system_process = None
-        self.main_agent_ready = False
+        self.system_process: Process | None = None
+        self.main_agent_ready: bool = False
         self.user_agents: List[str] = []
         self.device_agents: List[str] = []
         self.pending_actions: Dict[str, Tuple[TimeSlot, int|float]] = {}
 
         # Connect to the XMPP server
-        self._client = None
-        self._use_SSL = use_SSL
-        self._process_incoming_messages = False
-        self._expected_replies: Dict[str, xmpp.Message] = {}
+        self._client: xmpp.Client | None = None
+        self._use_SSL: bool = use_SSL
+        self._process_incoming_messages: bool = False
+        self._expected_replies: Dict[str, xmpp.Message | None] = {}
         self._connect()
 
     def _connect(self):
@@ -67,7 +67,7 @@ class Interface():
         logger.info('Interface connected to XMPP server')
 
         self._client.RegisterDisconnectHandler(lambda: print('Interface disconnected from XMPP server'))
-        self._client.RegisterHandler('message', self._handle_message)
+        self._client.RegisterHandler('message', self._handle_message) # type: ignore
         
         self._client.sendInitPresence(requestRoster=0)
 
@@ -75,7 +75,7 @@ class Interface():
         self._process_incoming_messages = True
         def process_incoming_messages_thread():
             while self._process_incoming_messages:
-                self._client.Process(timeout=1)
+                self._client.Process(timeout=1) # type: ignore
         self._messsage_processing_thread = threading.Thread(target=process_incoming_messages_thread, name='MessageProcessingThread', daemon=True)
         self._messsage_processing_thread.start()
 
@@ -85,11 +85,11 @@ class Interface():
         if msg.getType() not in ['error', 'chat', None]:
             logger.info(f'Unknown message type: {msg.getType()}')
             return
-        
+
         metadata = get_spade_metadata_from_xmpp_message(msg)
 
         # Check if the message is a reply to a sent message
-        in_reply_to = metadata.get('in-reply-to')
+        in_reply_to = metadata.get('in-reply-to') if metadata else None
         if in_reply_to:
             if in_reply_to in self._expected_replies:
                 self._expected_replies[in_reply_to] = msg
@@ -106,14 +106,17 @@ class Interface():
         elif AgentReadyMessage().match(msg):
             if msg.getBody() == self.system_jid:
                 self.main_agent_ready = True
-                logger.debug(f'Main agent ready message')
+                logger.debug('Main agent ready message')
             else:
-                logger.debug(f'Agent ready message')
+                logger.debug('Agent ready message')
         elif ActionMessage().match(msg):
-            msg: ActionMessage = ActionMessage(msg.getBody(), msg.getFrom())
-            action = msg.Action
-            self.pending_actions[action[1]] = (action[0], action[2])
-            logger.debug(f'Action message: {action}')
+            action_msg: ActionMessage = ActionMessage(msg.getBody(), msg.getFrom())
+            action = action_msg.Action
+            if action is not None:
+                self.pending_actions[action[1]] = (action[0], action[2])
+                logger.debug(f'Action message: {action}')
+            else:
+                logger.warning('Received an action message without action!')
         else:
             logger.debug(f'Unmatched message: {msg.getBody()}')
 
@@ -121,27 +124,29 @@ class Interface():
         if not self.system_process or not self.system_process.is_alive():
             raise Exception('System process is not running')
         
+        if self._client is None:
+            raise Exception('Interface not connected!')
+
         if message.get_spade_metadata('reply-with') is not None:
             raise ValueError('Message cannot have a "reply-with" metadata')
 
-        self._client.send(message)
+        self._client.send(message) # type: ignore
 
     def _send_message_and_wait_for_reply(self, message: Message, timeout: int = 25) -> xmpp.Message|None:
         if not self.system_process or not self.system_process.is_alive():
             raise Exception('System process is not running')
-        
-        expected_response_id = message.get_spade_metadata('reply-with')
+
+        expected_response_id: str = message.get_spade_metadata('reply-with') # type: ignore
         if expected_response_id is None:
             raise ValueError('Message does not have a "reply-with" metadata')
-        
+
         self._expected_replies[expected_response_id] = None
-        self._client.send(message)
+        self._client.send(message) # type: ignore
 
         abort_time = time.time() + timeout
         while time.time() < abort_time:
             if self._expected_replies[expected_response_id] is not None:
-                response = self._expected_replies.pop(expected_response_id)
-                return response
+                return self._expected_replies.pop(expected_response_id)
             time.sleep(0.5)
         return None
 
@@ -207,7 +212,7 @@ class Interface():
         if initial_location is not None and len(self.environment_state.DeviceStates) != 0:
                 raise Exception('Cannot add new user with location after device agents have been added. This would change the size of the state vector for already learning device agents.')
 
-        msg = AddNewUserAgentMessage(to=self.system_jid, jid=jid, password=password)
+        msg = AddNewUserAgentMessage(to=self.system_jid, jid=str(jid), password=password)
         response = self._send_message_and_wait_for_reply(msg, timeout)
 
         if response is None:
@@ -275,7 +280,7 @@ class Interface():
         if not isinstance(initial_state, (float, int)):
             raise ValueError('Invalid initial state value')
 
-        msg = AddNewDeviceAgentMessage(to=self.system_jid, jid=jid, password=password)
+        msg = AddNewDeviceAgentMessage(to=self.system_jid, jid=str(jid), password=password)
         response = self._send_message_and_wait_for_reply(msg, timeout)
 
         if response is None:
