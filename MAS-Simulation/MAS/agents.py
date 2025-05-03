@@ -60,8 +60,8 @@ class BaseAgent(Agent):
 
 
 class TCPRelayAgent(BaseAgent):
-    def __init__(self, jid: str, password: str, host_ip: str, host_port: int, verify_security: bool = False):
-        super().__init__(jid, password, verify_security)
+    def __init__(self, jid: str, password: str, host_ip: str, host_port: int, xmpp_port: int = 5222, verify_security: bool = False):
+        super().__init__(jid, password, xmpp_port, verify_security)
         self.host_ip = host_ip
         self.host_port = host_port
 
@@ -150,15 +150,13 @@ class TCPRelayAgent(BaseAgent):
         self.add_behaviour(self.WaitForConnectionBehavior())
 
     async def stop(self):
-        sockt: socket = self.get('socket')
-        if sockt:
+        if sockt := self.get('socket'):
             sockt.close()
             self.set('socket', None)
-        conn: socket = self.get('conn')
-        if conn:
+        if conn := self.get('conn'):
             conn.close()
             self.set('conn', None)
-        
+
         await super().stop()
 
 
@@ -370,7 +368,7 @@ class MainAgent(BaseAgent):
         for agent in self.get('user_agents') + self.get('device_agents'):
             await agent.stop()
         try:
-            SystemStats().save_plots(prediction_config.models_folder + '/plots.png')
+            SystemStats().save_plots(f'{prediction_config.models_folder}/plots.png')
         except:
             logger.error('Error saving plots')
 
@@ -422,9 +420,9 @@ class UserAgent(BaseAgent):
                 if msg_device_filter.Device_JID not in device_filters:
                     # Add new device filter
                     new_device_filter = DeviceFilter(Device_JID=msg_device_filter.Device_JID, 
-                                                     Enabled=msg_device_filter.Enabled if msg_device_filter.Enabled else False,
-                                                     Treshold_Off=msg_device_filter.Treshold_Off if msg_device_filter.Treshold_Off else 0.5,
-                                                     Treshold_On=msg_device_filter.Treshold_On if msg_device_filter.Treshold_On else 0.5)
+                                                     Enabled=msg_device_filter.Enabled or False,
+                                                     Treshold_Off=msg_device_filter.Treshold_Off or 0.5,
+                                                     Treshold_On=msg_device_filter.Treshold_On or 0.5)
                     device_filters[msg_device_filter.Device_JID]  = new_device_filter
                 else:
                     device_filter: DeviceFilter = device_filters[msg_device_filter.Device_JID]
