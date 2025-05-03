@@ -60,10 +60,19 @@ MAS:
         formatters: 
             default: 
                 format: "%(name)s - %(levelname)s: %(message)s"
+            colored:
+                (): colorlog.ColoredFormatter
+                format: "%(log_color)s%(name)s - %(levelname)s: %(message)s"
+                log_colors:
+                    DEBUG: cyan
+                    INFO: green
+                    WARNING: yellow
+                    ERROR: red
+                    CRITICAL: red,bg_white
         handlers: 
             console: 
                 class: logging.StreamHandler
-                formatter: default
+                formatter: colored
         loggers: 
             MAS: 
                 level: WARNING
