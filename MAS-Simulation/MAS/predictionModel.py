@@ -110,7 +110,7 @@ class PredictionModel:
         pred: torch.Tensor
         pred, hidden_state = self.model.forward(self.input_sequence, self.last_hidden_state)
 
-        pred = self._get_last_tensor_element(pred) # Last prediction in the sequence
+        pred = self._get_last_tensor_element(pred, 1) # Last prediction in the sequence
         self.last_pred = pred
         if self.model_params.keep_hidden_state:
             self.last_hidden_state = hidden_state.detach()
@@ -212,15 +212,16 @@ class PredictionModel:
         else:
             raise ValueError(f"Model type '{type}' is not supported. Supported types: {MODEL_TYPES}")
 
-    def _get_last_tensor_element(self, x: torch.Tensor) -> torch.Tensor:
+    def _get_last_tensor_element(self, x: torch.Tensor, n_dim: int = 0) -> torch.Tensor:
         """Extract the last number from a tensor
 
         Args:
             x (torch.Tensor): Input tensor of any dimension
+            n_dim (int): The target number of dimensions to reduce the tensor to
 
         Returns:
             torch.Tensor: A scalar tensor containing the last element of the input tensor
         """
-        while x.dim() > 0:
+        while x.dim() > n_dim:
             x = x[-1]
         return x
