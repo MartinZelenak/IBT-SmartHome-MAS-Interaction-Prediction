@@ -3,6 +3,7 @@ from spade.behaviour import CyclicBehaviour, PeriodicBehaviour, OneShotBehaviour
 import asyncio
 import logging
 import os
+from typing import List
 
 from socket import socket, AF_INET, SOCK_STREAM
 from select import select
@@ -21,20 +22,19 @@ from .systemStats import SystemStats
 logger = logging.getLogger('MAS.system')
 prediction_config: PredictionConfig = default_prediction_config
 
-# TODO: Send Error/Success messages in reply to performative=request messages
-
 def get_time() -> TimeSlot:
     '''Return the current time of the environment.
     This method should be set before running the system.'''
     raise NotImplementedError('The get time method is not set')
 
-main_agent_jid = None
-interface_jid = None
+main_agent_jid: str | None = None
+interface_jid: str | None = None
 
 class BaseAgent(Agent):
     '''Base agent class with common behaviors and setup.'''
     class StopMessageBehavior(CyclicBehaviour):
         async def run(self):
+            self.agent: BaseAgent
             msg = await self.receive(timeout=10)
             if msg:
                 msg = StopMessage.from_message(msg)
@@ -67,6 +67,8 @@ class TCPRelayAgent(BaseAgent):
 
     class WaitForConnectionBehavior(OneShotBehaviour):
         async def run(self):
+            self.agent: TCPRelayAgent
+
             # Open socket for communication
             sockt = socket(AF_INET, SOCK_STREAM)
             sockt.bind((self.agent.host_ip, self.agent.host_port))
@@ -95,6 +97,8 @@ class TCPRelayAgent(BaseAgent):
 
     class RelayIncommingMessagesBehavior(PeriodicBehaviour):
         async def run(self):
+            self.agent: TCPRelayAgent
+
             # Get connection
             conn: socket = self.agent.get('conn')
             if not conn or conn.fileno() == -1:
@@ -127,6 +131,7 @@ class TCPRelayAgent(BaseAgent):
 
     class SendOutgoingMessagesBehavior(CyclicBehaviour):
         async def run(self):
+            self.agent: TCPRelayAgent
             msg = await self.receive(timeout=10)
             if msg:
                 logger.debug(f'{self.agent.jid} Sending message: {msg}')
@@ -173,6 +178,7 @@ class MainAgent(BaseAgent):
 
     class SendReadyMessageBehavior(OneShotBehaviour):
         async def run(self):
+            self.agent: MainAgent
             msg = AgentReadyMessage()
             msg.to = str(interface_jid)
             msg.body = str(self.agent.jid)
@@ -182,6 +188,7 @@ class MainAgent(BaseAgent):
     class ReceiveAddNewUserAgentBehavior(CyclicBehaviour):
         '''Behavior to receive a message to add a new user. The message should contain the new agent's JID and password.'''
         async def run(self):
+            self.agent: MainAgent
             msg = await self.receive(timeout=10)
             if msg:
                 msg = AddNewUserAgentMessage.from_message(msg)
@@ -218,6 +225,7 @@ class MainAgent(BaseAgent):
     class ReceiveAddNewDeviceAgentBehavior(CyclicBehaviour):
         '''Behavior to receive a message to add a new device. The message should contain the new agent's JID and password.'''
         async def run(self):
+            self.agent: MainAgent
             msg = await self.receive(timeout=10)
             if msg:
                 msg = AddNewDeviceAgentMessage.from_message(msg)
@@ -255,6 +263,7 @@ class MainAgent(BaseAgent):
         '''Behavior to receive a message with a new state. 
         The state is then propagated to all device prediction agents.'''
         async def run(self):
+            self.agent: MainAgent
             msg = await self.receive(timeout=10)
             if msg:
                 msg = NewStateMessage.from_message(msg)
@@ -283,6 +292,7 @@ class MainAgent(BaseAgent):
         '''Behavior to receive a message to trigger predictions.
         The message is then sent to all device agents.'''
         async def run(self):
+            self.agent: MainAgent
             msg = await self.receive(timeout=10)
             if msg:
                 msg = TriggerPredictionMessage.from_message(msg)
@@ -304,6 +314,7 @@ class MainAgent(BaseAgent):
         '''Behavior to receive a message with a prediction.
         The prediciton is then propagated to all user agents.'''
         async def run(self):
+            self.agent: MainAgent
             msg = await self.receive(timeout=10)
             if msg:
                 msg = PredictionMessage.from_message(msg)
@@ -319,12 +330,13 @@ class MainAgent(BaseAgent):
         '''Behavior to receive a message with action.
         The action is then sent to the system interface.'''
         async def run(self):
+            self.agent: MainAgent
             msg = await self.receive(timeout=10)
             if msg:
                 msg = ActionMessage.from_message(msg)
                 logger.debug(f'{self.agent.jid}: Action received with content: {msg.body}')
 
-                msg.to = interface_jid
+                msg.to = interface_jid or ""
                 msg.sender = str(self.agent.jid)
                 await self.send(msg)
 
@@ -379,6 +391,7 @@ class UserAgent(BaseAgent):
     '''Agent used to send device actions based on user settings and PredictionAgents' predictions.'''
     class RecievePredictionBehavior(CyclicBehaviour):
         async def run(self):
+            self.agent: UserAgent
             msg = await self.receive(timeout=10)
             if msg:
                 msg = PredictionMessage.from_message(msg)
@@ -388,27 +401,28 @@ class UserAgent(BaseAgent):
                 pred = float(pred)
 
                 # Filter prediction
-                device_filters = self.get('device_filters')
+                device_filters: List[DeviceFilter] = self.get('device_filters')
                 if device_jid not in device_filters or not device_filters[device_jid].Enabled:
                     logger.debug(f'{self.agent.jid}: Device filter not set or disabled. Ignoring prediction.')
                     return
                 device_filter: DeviceFilter = device_filters[device_jid]
-                if pred <= device_filter.Treshold_Off:
+                if pred <= (device_filter.Treshold_Off or 0.0):
                     pred = 0
-                elif pred >= device_filter.Treshold_On:
+                elif pred >= (device_filter.Treshold_On or 1.0):
                     pred = 1
                 else:
                     logger.info(f'{self.agent.jid}: Prediction not within tresholds. Ignoring prediction.')
                     return
 
                 action_msg = ActionMessage()
-                action_msg.to=main_agent_jid
+                action_msg.to = main_agent_jid or ""
                 action_msg.Action = get_time(), device_jid, pred
                 await self.send(action_msg)
                 logger.debug(f'{self.agent.jid}: Action sent')
 
     class ReceiveSetDeviceFilterBehavior(CyclicBehaviour):
         async def run(self):
+            self.agent: UserAgent
             msg = await self.receive(timeout=10)
             if msg:
                 msg = SetDeviceFilterMessage.from_message(msg)
@@ -456,6 +470,7 @@ class DeviceAgent(BaseAgent):
     '''Agent used to receive state updates and send predictions to UserAgents.'''
     class ReceiveNewStateBehavior(CyclicBehaviour):
         async def run(self):
+            self.agent: DeviceAgent
             msg = await self.receive(timeout=10)
             if msg:
                 msg = NewStateMessage.from_message(msg)
@@ -501,6 +516,7 @@ class DeviceAgent(BaseAgent):
 
     class ReceiveTriggerPredictionBehavior(CyclicBehaviour):
         async def run(self):
+            self.agent: DeviceAgent
             msg = await self.receive(timeout=10)
             if msg:
                 msg = TriggerPredictionMessage.from_message(msg)
@@ -509,6 +525,7 @@ class DeviceAgent(BaseAgent):
 
     class PeriodicPredictionsBehavior(PeriodicBehaviour):
         async def run(self):
+            self.agent: DeviceAgent
             self.agent.add_behaviour(self.agent.PredictBehavior())
 
         async def on_start(self):
@@ -516,6 +533,7 @@ class DeviceAgent(BaseAgent):
 
     class PredictBehavior(OneShotBehaviour):
         async def run(self):
+            self.agent: DeviceAgent
             state = self.get('state')
             time = get_time()
             state = [time.Hour, time.Minute, time.DayOfWeek, *state]
@@ -537,7 +555,7 @@ class DeviceAgent(BaseAgent):
             logger.info(f'{self.agent.jid}: State: {state} Prediction: {prediction}')
             
             msg = PredictionMessage()
-            msg.to=main_agent_jid
+            msg.to = main_agent_jid or ""
             msg.Prediction = str(self.agent.jid), prediction
             await self.send(msg)
             logger.debug(f'{self.agent.jid}: Prediction sent')
@@ -555,7 +573,7 @@ class DeviceAgent(BaseAgent):
 
         self.set('model_initialized', False)
         self.set('learning', False)
-        # Prediction behavior is added when the first state is received
+        # NOTE: Prediction behavior is added when the first state is received
 
     async def stop(self):
         if self.is_alive():

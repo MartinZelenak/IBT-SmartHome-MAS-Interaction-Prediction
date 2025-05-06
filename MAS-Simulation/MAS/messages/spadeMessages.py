@@ -4,8 +4,6 @@ from typing import Tuple, Optional
 
 from MAS.data import *
 
-# REVIEW: Unify body parsing/validation being done in one place (match() method or agent)
-
 ### 
 ### REPLY MESSAGES
 ### 
