@@ -2,7 +2,7 @@ import logging
 import threading
 import time
 from multiprocessing import Process
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple, Iterable
 
 import xmpp
 from xmpp import JID
@@ -151,12 +151,11 @@ class Interface():
         return None
 
     def start(self, 
-              *, 
               timeout: int = 25, 
-              log_conf: Optional[dict|int] = None, 
+              log_conf: Dict | int = logging.INFO, 
               prediction_conf: Optional[PredictionConfig] = None, 
               get_time_func: Optional[Callable[[], TimeSlot]] = None, 
-              **kwargs):
+              get_time_func_params: Optional[Iterable] = None):
         '''Start the system process.
         
         Args:
@@ -178,10 +177,9 @@ class Interface():
             'main_agent_password': self.system_password, 
             'log_conf': log_conf, 
             'prediction_conf': prediction_conf, 
-            'get_time_func': get_time_func
+            'get_time_func': get_time_func,
+            'get_time_func_params': get_time_func_params
         }
-        if 'get_time_func_params' in kwargs:
-            system_kwargs['get_time_func_params']=kwargs['get_time_func_params']
 
         self.system_process = Process(target=system_start, 
                                       kwargs=system_kwargs, 
