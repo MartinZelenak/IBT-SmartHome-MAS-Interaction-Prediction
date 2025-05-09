@@ -8,12 +8,13 @@ Simulation:
     end: 
         minute: 0   # 0-59
         hour: 0     # 0-23
-        day: 1      # 1-31
+        day: 2      # 1-31
         month: 1    # 1-12
-        year: 2     # 1-9999
+        year: 1     # 1-9999
     log_interval: 5 # minutes
     MAS_update_interval: 5 # minutes (determines size of time slot for prediction)
-    inhabitants: 3
+    stochastic_inhabitants: 1
+    deterministic_inhabitants: 0
     inhabitants_logs: 
         enabled: True
         folder: ./logs
@@ -50,7 +51,7 @@ MAS:
         periodic_prediction: 
             # Disable when running in simulation (this is in real-time)
             enabled: False
-            period: 300 # minutes
+            period: 5 # minutes
     
     # Python logging configuration
     # See https://docs.python.org/3/library/logging.config.html#logging-config-dictschema

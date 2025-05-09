@@ -6,6 +6,7 @@ import os
 import pickle
 import socket
 import time
+import argparse
 from typing import Dict, Generator, List, Any
 
 import simpy
@@ -21,15 +22,33 @@ from Simulation.inhabitants.stochastic import StochasticInhabitant
 from Simulation.stateLogger import PeriodicStateLogger
 
 # Load config
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Run simulation with MAS")
+    parser.add_argument("--config", "-c", default="config.yaml", 
+                      help="Path to the configuration file (default: config.yaml)")
+    return parser.parse_args()
+
+
 Config: Any = None
-with open("config.yaml", "r") as file:
-    Config = yaml.safe_load(file)
-if not Config:
-    print("Failed to load config file")
+args = parse_arguments()
+config_path = args.config
+
+try:
+    with open(config_path, "r") as file:
+        Config = yaml.safe_load(file)
+    if not Config:
+        print(f"Failed to load config file: {config_path} (empty file)")
+        exit(1)
+except FileNotFoundError:
+    print(f"Config file not found: {config_path}")
+    exit(1)
+except Exception as e:
+    print(f"Error loading config file: {config_path} - {str(e)}")
     exit(1)
 
 LOG_TIME_INTERVAL = Config["Simulation"]["log_interval"] # minutes # Log every LOG_TIME_INTERVAL minutes
-NUM_OF_INHABITANTS = Config["Simulation"]["inhabitants"]
+NUM_OF_STOCHASTIC_INHABITANTS = Config["Simulation"]["stochastic_inhabitants"]
+NUM_OF_DETERMINISTIC_INHABITANTS = Config["Simulation"]["deterministic_inhabitants"]
 MAS_JABBER_HOST = Config["Simulation"]["jabber_host"]
 
 start_dict = Config["Simulation"]["start"]
@@ -321,16 +340,23 @@ def main():
         env.process(day_divider(env))
 
         # Inhabitants
-        for i in range(NUM_OF_INHABITANTS):
+        for i in range(NUM_OF_STOCHASTIC_INHABITANTS):
             inhabitant = StochasticInhabitant(env, f"inhabitant_{i}")
             inhabitant.location = env.home.rooms["bedroom"]  # Start in the bedroom
-            env.process(inhabitant.behaviour())
+            env.process(inhabitant.behavior())
 
-            # State logger
-            if Config["Simulation"]["inhabitants_logs"]["enabled"]:
-                folder = Config["Simulation"]["inhabitants_logs"]["folder"]
-                if os.path.exists(folder) == False:
-                    os.mkdir(folder)
+        for i in range(NUM_OF_DETERMINISTIC_INHABITANTS + len(env.inhabitans)):
+            inhabitant = StochasticInhabitant(env, f"inhabitant_{i}")
+            inhabitant.location = env.home.rooms["bedroom"]  # Start in the bedroom
+            env.process(inhabitant.behavior())
+
+
+        # State logger
+        if Config["Simulation"]["inhabitants_logs"]["enabled"]:
+            folder = Config["Simulation"]["inhabitants_logs"]["folder"]
+            if os.path.exists(folder) == False:
+                os.mkdir(folder)
+            for inhabitant in env.inhabitans:
                 logFilePath = os.path.join(folder, f"{inhabitant.name}.csv")
                 stateLoggers.append(PeriodicStateLogger(env, LOG_TIME_INTERVAL, logFilePath, inhabitant))
                 env.eventHandler.subscribe("light_turned_on", stateLoggers[-1].deviceTurnedOnHandler)
