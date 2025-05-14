@@ -58,12 +58,9 @@ async def main(main_agent_jid: str, main_agent_password: str):
     await main_agent.start()
 
     try:
-        while main_agent.is_alive():
-            await asyncio.sleep(1)
+        await spade.wait_until_finished(main_agent)
     except KeyboardInterrupt:
         logger.warning("Keyboard interrupt received. Stopping system...")
-
-    await main_agent.stop()
 
 async def tcp_main(main_agent_jid: str, 
                main_agent_password: str, 
@@ -71,20 +68,16 @@ async def tcp_main(main_agent_jid: str,
                tcp_interface_password: str,
                tcp_interface_host_ip: str = 'localhost',
                tcp_interface_port: int = 5007):
-    tcp_agent = agents.TCPRelayAgent(tcp_interface_jid, tcp_interface_password, tcp_interface_host_ip, tcp_interface_port)
-    await tcp_agent.start()
-
     main_agent = agents.MainAgent(main_agent_jid, main_agent_password)
     await main_agent.start()
 
+    tcp_agent = agents.TCPRelayAgent(tcp_interface_jid, tcp_interface_password, tcp_interface_host_ip, tcp_interface_port)
+    await tcp_agent.start()
+
     try:
-        while tcp_agent.is_alive() or main_agent.is_alive():
-            await asyncio.sleep(1)
+        await spade.wait_until_finished(tcp_agent)
     except KeyboardInterrupt:
         logger.warning("Keyboard interrupt received. Stopping system...")
-
-    await main_agent.stop()
-    await tcp_agent.stop()
     
     
 def system_start(interface_jid: str, 
@@ -93,7 +86,7 @@ def system_start(interface_jid: str,
                  log_conf: Optional[dict|int] = logging.INFO,
                  prediction_conf: Optional[PredictionConfig] = None,
                  get_time_func: Optional[Callable[[], TimeSlot]] = None, 
-                 get_time_func_params: Iterable[Any] = None):
+                 get_time_func_params: Optional[Iterable[Any]] = None):
     '''Start the MAS system with the given configurations. This call blocks until the system is finished.
     To communicate with the system send messages to the given JID using XMPP.
     This is the standard way to start the system.
@@ -141,7 +134,7 @@ def system_start_tcp(tcp_interface_jid: str,
                      log_conf: Optional[dict|int] = logging.INFO,
                      prediction_conf: Optional[PredictionConfig] = None,
                      get_time_func: Optional[Callable[[], TimeSlot]] = None, 
-                     get_time_func_params: Iterable[Any] = None):
+                     get_time_func_params: Optional[Iterable[Any]] = None):
     '''Start the MAS system with the given configurations. This call blocks until the system is finished.
     This version of the function uses a TCP relay agent to communicate with other agents as a substitute for a XMPP interface.
     To communicate with the system send pickled spade messages to the TCP relay agent socket.

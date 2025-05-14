@@ -72,7 +72,7 @@ class PeriodicStateLogger(StateLogger):
         for room in self.env.home.rooms.values():
             self.locationNumbers[room.name] = len(self.locationNumbers) + 1
             for device in room.devices.values():
-                if isinstance(device, SmartLight):  # Log only SmartLight devices # TODO: Log all devices
+                if isinstance(device, SmartLight):  # Log only SmartLight devices
                     self.deviceNumbers[device.name] = len(self.deviceNumbers) + 1
                     self.state.DevicesStates.append(device.on)
                     self.logFile.write(f',{device.name}_on')
@@ -94,7 +94,7 @@ class PeriodicStateLogger(StateLogger):
         self.state.InhabitantActions = []
         for room in self.env.home.rooms.values():
             for device in room.devices.values():
-                if isinstance(device, SmartLight) and device.name in self.deviceNumbers.keys(): # TODO: Log all devices
+                if isinstance(device, SmartLight) and device.name in self.deviceNumbers.keys():
                     self.state.DevicesStates[self.deviceNumbers[device.name] - 1] = device.on
 
     # Simpy process
@@ -163,7 +163,7 @@ class EventStateLogger(StateLogger):
         for room in self.env.home.rooms.values():
             self.locationNumbers[room.name] = len(self.locationNumbers) + 1
             for device in room.devices.values():
-                if isinstance(device, SmartLight):  # Log only SmartLight devices # TODO: Log all devices
+                if isinstance(device, SmartLight):  # Log only SmartLight devices
                     self.deviceNumbers[device.name] = len(self.deviceNumbers) + 1
                     self.state.DevicesStates.append(device.on)
                     self.logFile.write(f',{device.name}_on')
@@ -182,7 +182,7 @@ class EventStateLogger(StateLogger):
         self.state.InhabitantLocation = self.locationNumbers[self.inhabitant.location.name] if self.inhabitant.location else None
         for room in self.env.home.rooms.values():
             for device in room.devices.values():
-                if isinstance(device, SmartLight) and device.name in self.deviceNumbers.keys(): # TODO: Log all devices
+                if isinstance(device, SmartLight) and device.name in self.deviceNumbers.keys():
                     self.state.DevicesStates[self.deviceNumbers[device.name] - 1] = device.on
 
     def log(self, event_name: LogEvent):

@@ -79,6 +79,6 @@ class StateChangeAccuracy(Metric):
                 - 'total_state_changes': The total number of state changes observed
         """
         return {
-            'accuracy': self.correct_state_changes.float() / max(1, self.total_state_changes),
+            'accuracy': self.correct_state_changes.float() / max(1, self.total_state_changes),  # type: ignore
             'total_state_changes': self.total_state_changes
         }

@@ -275,7 +275,6 @@ class MainAgent(BaseAgent):
                     new_state_message.body = msg.body
                     await self.send(new_state_message)
 
-                # TODO: Deal with matching the number of location entries with pred, actual and loss entries
                 if prediction_config.predict_on_new_state and not prediction_config.periodic_prediction[0]:
                     # NOTE: Collect user locations when predicting only on new state
                     for user, location in msg.State.UserLocations.items():
@@ -414,11 +413,13 @@ class UserAgent(BaseAgent):
                     logger.info(f'{self.agent.jid}: Prediction not within tresholds. Ignoring prediction.')
                     return
 
+                time = get_time()
+
                 action_msg = ActionMessage()
                 action_msg.to = main_agent_jid or ""
-                action_msg.Action = get_time(), device_jid, pred
+                action_msg.Action = time, device_jid, pred
                 await self.send(action_msg)
-                logger.debug(f'{self.agent.jid}: Action sent')
+                logger.info(f'{self.agent.jid}: Action sent for device {device_jid} with desired state {pred} and at time {time} ')
 
     class ReceiveSetDeviceFilterBehavior(CyclicBehaviour):
         async def run(self):

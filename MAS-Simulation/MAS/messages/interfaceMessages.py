@@ -139,7 +139,7 @@ class NewStateMessage(Message):
     def State(self) -> State:
         return State.from_json(self.body)
     @State.setter
-    def State(self, state: State):
+    def State(self, state: 'State'):
         self.body = state.to_json()
 
 class AddNewUserAgentMessage(Message):

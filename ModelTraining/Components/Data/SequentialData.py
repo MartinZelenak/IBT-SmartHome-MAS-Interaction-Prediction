@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generator, Optional, Sequence
+from typing import Generator, Optional, Sequence, override
 
 import numpy as np
 import pandas as pd
@@ -200,16 +200,7 @@ class RemoveColumnsTransform(DataTransform):
         self.remove_feature_cols = remove_feature_cols
         self.remove_label_cols = remove_label_cols or remove_feature_cols
 
+    @override
     def __call__(self, sample: tuple[np.ndarray, np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
         sample = (np.delete(sample[0], self.remove_feature_cols, axis=1), np.delete(sample[1], self.remove_label_cols))
         return sample
-
-if __name__ == "__main__":
-    dataset = SequentialStateDataset("./datasets/month-5min.csv", n_columns=15, lookback=6)
-    dataset.set_transforms(
-        [RemoveColumnsTransform([dataset.columns.index("DayOfMonth"), dataset.columns.index("Year")])]
-    )
-    print(dataset.columns)
-    print(len(dataset))
-    print(dataset[0])
-    print(dataset.sample_sizes())

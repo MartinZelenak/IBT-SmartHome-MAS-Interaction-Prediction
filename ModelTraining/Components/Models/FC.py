@@ -55,7 +55,7 @@ class PerDeviceFC(ModelBase):
                 dim=1,
             )
 
-            # TODO: Make prediction for each of the time step in the input sequence
+            # Make prediction for each of the time step in the input sequence
             device_output = self.device_models[i](device_input)  # type: ignore
 
             # Reshape output back to original batch and sequence dimensions

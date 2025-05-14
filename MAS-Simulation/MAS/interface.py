@@ -61,8 +61,10 @@ class Interface():
         jid = xmpp.JID(self.jid)
         self._client = xmpp.Client(server=jid.getDomain(), debug=None)
         if not self._client.connect():
+            logger.error('Could not connect to XMPP server')
             raise Exception('Could not connect to XMPP server')
         if not self._client.auth(jid.getNode(), self.password):
+            logger.error('Could not authenticate with XMPP server')
             raise Exception('Could not authenticate with XMPP server')
         logger.info('Interface connected to XMPP server')
 
@@ -122,22 +124,27 @@ class Interface():
 
     def _send_message(self, message: Message):
         if not self.system_process or not self.system_process.is_alive():
+            logger.error('System process is not running')
             raise Exception('System process is not running')
         
         if self._client is None:
+            logger.error('Interface not connected!')
             raise Exception('Interface not connected!')
 
         if message.get_spade_metadata('reply-with') is not None:
+            logger.error('Message cannot have a "reply-with" metadata')
             raise ValueError('Message cannot have a "reply-with" metadata')
 
         self._client.send(message) # type: ignore
 
     def _send_message_and_wait_for_reply(self, message: Message, timeout: int = 25) -> xmpp.Message|None:
         if not self.system_process or not self.system_process.is_alive():
+            logger.error('System process is not running')
             raise Exception('System process is not running')
 
         expected_response_id: str = message.get_spade_metadata('reply-with') # type: ignore
         if expected_response_id is None:
+            logger.error('Message does not have a "reply-with" metadata')
             raise ValueError('Message does not have a "reply-with" metadata')
 
         self._expected_replies[expected_response_id] = None
@@ -186,6 +193,7 @@ class Interface():
                                       name='Multi-Agent System', daemon=True)
         self.system_process.start()
         if not self.system_process.is_alive():
+            logger.error('System process did not start')
             raise Exception('System process did not start')
         
         # Wait for the main agent to be ready
@@ -194,6 +202,7 @@ class Interface():
             if self.main_agent_ready:
                 return
             time.sleep(1)
+        logger.error('No response from main agent')
         raise Exception('No response from main agent')
 
     def add_user(self, jid: JID, password: str, initial_location: Optional[int] = None, timeout: int = 25) -> bool:
@@ -206,9 +215,11 @@ class Interface():
         if not isinstance(jid, JID):
             raise ValueError('Invalid JID value')
         if not isinstance(password, str):
+            logger.error('Invalid password value')
             raise ValueError('Invalid password value')
         if initial_location is not None and len(self.environment_state.DeviceStates) != 0:
-                raise Exception('Cannot add new user with location after device agents have been added. This would change the size of the state vector for already learning device agents.')
+            logger.error('Cannot add new user with location after device agents have been added. This would change the size of the state vector for already learning device agents.')
+            raise Exception('Cannot add new user with location after device agents have been added. This would change the size of the state vector for already learning device agents.')
 
         msg = AddNewUserAgentMessage(to=self.system_jid, jid=str(jid), password=password)
         response = self._send_message_and_wait_for_reply(msg, timeout)
