@@ -29,7 +29,7 @@ class stateEnd(NamedTuple):
     max: float | None
 
     def average(self) -> float:
-        if self.min == None or self.max == None:
+        if self.min is None or self.max is None:
             return self.min or self.max or 0
         return (self.min + self.max) / 2
 
@@ -42,8 +42,6 @@ class Inhabitant:
                 Raises ValueError when stateEnd.max time is exceeded, if stateEnd.max is set.
     ..._behavior() methods correspond to transitions between states.
     current_state_actions() is called in ..._behavior() methods to execute the current state.
-
-    Inherit this class to create a custom inhabitant.
     '''
     def __init__(self, 
                  env: Environment, 
@@ -73,10 +71,11 @@ class Inhabitant:
             InhabitantState.UNKNOWN: self.unknown_state
         }
         self.stateEnd: stateEnd = stateEnd(None, None)
+        self.deterministic = False
     
     def is_in_room(self, room_name: str) -> bool:
         '''Returns True if inhabitant is in given room. False otherwise'''
-        return self.location and self.location.name == room_name
+        return self.location is not None and self.location.name == room_name
 
     def change_room(self, room_name: str) -> bool:
         '''Returns True if the inhabitant moved to the room, False otherwise.
@@ -169,7 +168,7 @@ class Inhabitant:
                     if self.stateEnd.min != None and self.env.now < self.stateEnd.min:
                         end: float
                         minMaxDiff = self.stateEnd.max - self.stateEnd.min
-                        if(minMaxDiff > 0.0001):
+                        if(minMaxDiff > 0.0001 and not self.deterministic):
                             end = truncexp(minMaxDiff / 2, minMaxDiff) + self.stateEnd.min
                         else:
                             end = self.stateEnd.max
@@ -215,7 +214,7 @@ class Inhabitant:
         yield self.env.timeout(1)
 
 
-    def behaviour(self):
+    def behavior(self):
         weekendBehavior = False
         workdayBehavior = False
         while True:
