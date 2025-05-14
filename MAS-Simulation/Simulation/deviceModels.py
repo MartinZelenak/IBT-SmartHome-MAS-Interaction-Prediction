@@ -11,6 +11,7 @@ class SmartDevice:
         
         # MAS stats
         self.MAS_changed_state: bool = False
+        self.MAS_total_actions: int = 0
         self.MAS_correct_actions: int = 0
         self.MAS_incorrect_actions: int = 0
 
@@ -64,6 +65,7 @@ class SmartLight(SmartDevice):
             return False
         self.on = True
         self.state_changed_by_MAS = True
+        self.MAS_total_actions += 1
         print(f"MAS | -o {self.name} turned on")
         return True
 
@@ -72,6 +74,7 @@ class SmartLight(SmartDevice):
             return False
         self.on = False
         self.state_changed_by_MAS = True
+        self.MAS_total_actions += 1
         print(f"MAS | -o {self.name} turned off")
         return True
 

@@ -155,24 +155,40 @@ def MAS_send_message(message: spadeMessages.Message) -> spadeMessages.Message|No
 
     return None
 
-def MAS_receive_message() -> spadeMessages.Message:
+def MAS_receive_message(timeout=None) -> spadeMessages.Message | None:
     """Wait for a message from the MAS
 
+    Args:
+        timeout (float, optional): Maximum time to wait for a message in seconds. 
+                                 None means wait indefinitely. Defaults to None.
+
     Returns:
-        spadeMessages.Message: The received message
+        spadeMessages.Message | None: The received message or None if timeout occurred
     """
     global MAS_socket
     if not MAS_socket or MAS_socket.fileno() == -1:
         print("Failed to receive message: MAS socket is not connected")
-        exit(1)
+        return None
 
     try:
-        msg_length = int.from_bytes(MAS_socket.recv(4), byteorder="big")
+        MAS_socket.settimeout(timeout)
+        
+        # Receive message length
+        msg_length_bytes = MAS_socket.recv(4)
+        if not msg_length_bytes:
+            return None
+            
+        msg_length = int.from_bytes(msg_length_bytes, byteorder="big")
         msg_bytes = MAS_socket.recv(msg_length)
         return pickle.loads(msg_bytes)
+    except socket.timeout:
+        return None
     except Exception as e:
         print(f"Failed to receive message: {e}")
         exit(1)
+    finally:
+        # Reset socket to blocking mode
+        MAS_socket.settimeout(None)
 
 def MAS_stop():
     global MAS_subprocess
@@ -294,22 +310,33 @@ def MAS_handling(env: Environment, n_devices: int) -> Generator[simpy.Event, Non
         MAS_send_message(new_state_msg)
 
         # Wait for and take actions
-        n_actions = 0
-        while n_actions < n_devices:
-            action_msg = MAS_receive_message()
-            if isinstance(action_msg, spadeMessages.ActionMessage):
-                n_actions += 1
-                action = action_msg.Action
-                if action is None:
-                    continue
-                # print(f"Action: {action}")
-                device = JID_device_dict.get(action[1])
-                if not isinstance(device, dm.SmartLight):
-                    continue
-                if action[2] == 0:
-                    device.MAS_turn_off()
-                elif action[2] == 1:
-                    device.MAS_turn_on()
+        triggered_devices_JIDs: List[str] = []
+        while len(triggered_devices_JIDs) < n_devices:                
+            action_msg = MAS_receive_message(timeout=5)
+            if not isinstance(action_msg, spadeMessages.ActionMessage):
+                continue
+
+            action = action_msg.Action
+            if action is None:
+                continue
+            
+            action_time, device_JID, device_action_state = action
+            if action_time != MAS_get_time(current_env_time):
+                # Got an old action
+                continue
+            if device_JID in triggered_devices_JIDs:
+                # Got a message for an already triggered device
+                continue
+                
+            triggered_devices_JIDs.append(device_JID)
+            device = JID_device_dict.get(device_JID)
+            if not isinstance(device, dm.SmartLight):
+                continue
+
+            if device_action_state == 0:
+                device.MAS_turn_off()
+            elif device_action_state == 1:
+                device.MAS_turn_on()
 
         yield env.timeout(Config["Simulation"]["MAS_update_interval"])
 
@@ -323,7 +350,8 @@ def day_divider(env: Environment) -> Generator[simpy.Event, None, None]:
 def MAS_print_device_stats():
     for device in JID_device_dict.values():
         if isinstance(device, dm.SmartLight):
-            print(f"{device.name} - Correct: {device.MAS_correct_actions}, Incorrect: {device.MAS_incorrect_actions}")
+            MAS_unconfirmed_actions = device.MAS_total_actions - device.MAS_correct_actions - device.MAS_incorrect_actions
+            print(f"{device.name} - Correct: {device.MAS_correct_actions}, Incorrect: {device.MAS_incorrect_actions}, Unconfirmed: {MAS_unconfirmed_actions}")
 
 def main():
     stateLoggers: List[PeriodicStateLogger] = []
@@ -341,15 +369,17 @@ def main():
 
         # Inhabitants
         for i in range(NUM_OF_STOCHASTIC_INHABITANTS):
-            inhabitant = StochasticInhabitant(env, f"inhabitant_{i}")
+            inhabitant = StochasticInhabitant(env, f"stochastic_inhabitant_{i}")
             inhabitant.location = env.home.rooms["bedroom"]  # Start in the bedroom
             env.process(inhabitant.behavior())
 
-        for i in range(NUM_OF_DETERMINISTIC_INHABITANTS + len(env.inhabitans)):
-            inhabitant = StochasticInhabitant(env, f"inhabitant_{i}")
+        for i in range(NUM_OF_DETERMINISTIC_INHABITANTS):
+            inhabitant = StochasticInhabitant(env, f"deterministic_inhabitant_{i}")
             inhabitant.location = env.home.rooms["bedroom"]  # Start in the bedroom
             env.process(inhabitant.behavior())
 
+        for inhabitant in env.inhabitans:
+            print(f"Inhabitant: {inhabitant.name}")
 
         # State logger
         if Config["Simulation"]["inhabitants_logs"]["enabled"]:
