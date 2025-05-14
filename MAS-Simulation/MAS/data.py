@@ -6,21 +6,21 @@ import json
 class TimeSlot:
     """The time of the environment.
     This class represents the time of the environment, that is passed to the system."""
-    Minute: int
+    Minute: float
     Hour: int
     DayOfWeek: int
 
-    def __init__(self, minute: int, hour: int, dayOfWeek: int):
+    def __init__(self, minute: float, hour: int, dayOfWeek: int):
         if minute < 0 or minute > 59:
-            raise ValueError("Invalid minute")
+            raise ValueError("Invalid minute. Must be in range 0..59")
         self.Minute = minute
 
         if hour < 0 or hour > 23:
-            raise ValueError("Invalid hour")
+            raise ValueError("Invalid hour. Must be in range 0..23")
         self.Hour = hour
 
         if dayOfWeek < 0 or dayOfWeek > 6:
-            raise ValueError("Invalid day of week")
+            raise ValueError("Invalid day of week. Must be in range 0..6")
         self.DayOfWeek = dayOfWeek
 
     def __len__(self):
