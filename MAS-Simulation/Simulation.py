@@ -1,3 +1,10 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: This script runs the smart home simulation without the multi-agent system.
+Date: 2025-05-14
+"""
+
+
 import yaml
 import argparse
 from typing import Generator, List, Any

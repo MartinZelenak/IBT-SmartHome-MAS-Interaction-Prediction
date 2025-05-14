@@ -1,3 +1,11 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: The base Inhabitant class and related logic for simulating inhabitant behavior
+            and state transitions in a smart home environment.
+Date: 2025-05-14
+"""
+
+
 import enum
 from typing import Callable, Dict, Generator, NamedTuple, Optional
 

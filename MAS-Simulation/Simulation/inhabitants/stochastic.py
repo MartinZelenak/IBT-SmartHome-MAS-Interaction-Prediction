@@ -1,3 +1,11 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: The StochasticInhabitant class modeling stochastic inhabitant behavior
+            and state transitions for the smart home simulation.
+Date: 2025-05-14
+"""
+
+
 import random
 from typing import Generator, override
 

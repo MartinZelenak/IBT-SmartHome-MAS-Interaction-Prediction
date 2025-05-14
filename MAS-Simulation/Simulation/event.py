@@ -1,3 +1,10 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: A simple event handler for subscribing to and publishing events in the simulation.
+Date: 2025-05-14
+"""
+
+
 from typing import Dict, List, Callable
 
 class EventHandler:

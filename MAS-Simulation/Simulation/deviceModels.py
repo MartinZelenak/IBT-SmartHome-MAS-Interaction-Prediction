@@ -1,3 +1,11 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: Smart device models for the simulation, including base SmartDevice
+            and SmartLight classes with device operations and MAS statistics.
+Date: 2025-05-14
+"""
+
+
 from typing import Callable, Dict
 
 from .environment import Environment

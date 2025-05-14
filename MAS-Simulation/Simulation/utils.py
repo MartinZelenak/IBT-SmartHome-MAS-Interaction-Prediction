@@ -1,3 +1,10 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: Utility function for the simulation
+Date: 2025-05-14
+"""
+
+
 import random
 from typing import Optional
 

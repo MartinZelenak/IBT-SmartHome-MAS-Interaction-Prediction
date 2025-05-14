@@ -1,3 +1,10 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: The Environment and Time classes for simulating time, scheduling, and event handling in the smart home simulation.
+Date: 2025-05-14
+"""
+
+
 from typing import Any, Callable, List, NamedTuple, Optional
 
 import simpy
@@ -153,4 +160,3 @@ class Environment(simpy.Environment):
     
     def timeoutRequest(self, delay: float | int, value: Optional[Any] = None) -> simpy.Event:
         return TimeoutRequest(self, delay, value)
-    

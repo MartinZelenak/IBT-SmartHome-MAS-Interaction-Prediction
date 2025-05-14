@@ -1,3 +1,9 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: This script runs the smart home simulation together with the multi-agent system.
+Date: 2025-05-14
+"""
+
 import logging
 import logging.config
 import multiprocessing

@@ -1,3 +1,10 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: The Home and Room classes for modeling the smart home environment.
+Date: 2025-05-14
+"""
+
+
 from typing import Callable, Dict
 
 from .deviceModels import SmartDevice

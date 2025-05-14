@@ -1,3 +1,11 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: Implements logging of environment and inhabitant states for a smart home simulation.
+            Provides periodic and event-based loggers for device and inhabitant activity.
+Date: 2025-05-14
+"""
+
+
 from abc import ABC
 from dataclasses import dataclass
 from enum import Enum
