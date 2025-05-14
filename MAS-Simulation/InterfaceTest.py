@@ -64,17 +64,27 @@ def main():
 
     # Add a new user
     while input("# Add new user? (y/n) \n") == "y":
-        jid = input("## Enter the user MAS.JID: ")
+        jid = input("## Enter the user JID: ")
         password = input("## Enter the user password: ")
         system_interface.add_user(MAS.JID(jid), password, None if added_initial_agents else 1)
 
     # Add new device agent
     while input("# Add new device agent? (y/n) \n") == "y":
-        jid = input("## Enter the device agent MAS.JID: ")
+        jid = input("## Enter the device agent JID: ")
         password = input("## Enter the device agent password: ")
         system_interface.add_device(MAS.JID(jid), password, 0)
 
-    # TODO: Add a prediction filter for a device for a user
+    while input("# Set new or update a user agent device filter? (y/n) \n") == "y":
+        user_agent_jid = input("## Enter the user agent JID: ")
+        device_agent_jid = input("## Enter the device agent JID: ")
+        enabled = input("## Enable filter? (y/n) \n") == "y"
+        treshold_off = float(input("## Enter treshold off: "))
+        treshold_on = float(input("## Enter treshold on: "))
+        system_interface.user_set_device_filter(MAS.JID(user_agent_jid), 
+                                                MAS.JID(device_agent_jid), 
+                                                enabled, 
+                                                treshold_off, 
+                                                treshold_on)
 
     print(f"# State: {system_interface.environment_state}")
 
