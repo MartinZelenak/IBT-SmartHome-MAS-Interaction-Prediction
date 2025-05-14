@@ -1,11 +1,11 @@
-from typing import Tuple
+from typing import Tuple, List, Dict
 
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from torch.utils.tensorboard.writer import SummaryWriter
 from torchmetrics import (AUROC, Accuracy, F1Score, HammingDistance,
-                          MetricCollection, Precision, Recall)
+                          MetricCollection, Precision, Recall, Metric)
 
 from .Metrics.StateChangeAccuracy import StateChangeAccuracy
 from .ModelBase import ModelBase
@@ -22,13 +22,9 @@ class SequenceLearner(pl.LightningModule):
         self.loss_fn = nn.MSELoss()
         self.previous_hidden: torch.Tensor | None = None
 
-        self.training_step_outputs = []
         self.validation_step_outputs = []
         self.validation_epoch_start_step = 0
         
-        # Add a step counter for periodic logging
-        self.log_every_n_steps = 10
-
         self.added_custom_scalers: bool = False
 
         self.accuracy = Accuracy(task="multilabel", num_classes=2, num_labels=n_devices)
@@ -37,11 +33,14 @@ class SequenceLearner(pl.LightningModule):
         self.f1score = F1Score(task="multilabel", num_classes=2, num_labels=n_devices)
         self.auroc = AUROC(task="multilabel", num_classes=2, num_labels=n_devices)
         self.hamming = HammingDistance(task="multilabel", num_classes=2, num_labels=n_devices)
-
-        self.device_accuracies = nn.ModuleList([Accuracy(task="binary") for _ in range(self.n_devices)])
-        self.device_state_change_accuracies = nn.ModuleList([StateChangeAccuracy() for _ in range(self.n_devices)])
-        self.device_precisions = nn.ModuleList([Precision(task="binary") for _ in range(self.n_devices)])
-        self.device_recalls = nn.ModuleList([Recall(task="binary") for _ in range(self.n_devices)])
+        
+        self.device_accuracies = MetricCollection({f"device_{i}": Accuracy(task="binary") for i in range(self.n_devices)})
+        self.device_precisions = MetricCollection({f"device_{i}": Precision(task="binary") for i in range(self.n_devices)})
+        self.device_recalls = MetricCollection({f"device_{i}": Recall(task="binary") for i in range(self.n_devices)})
+        self.device_f1scores = MetricCollection({f"device_{i}": F1Score(task="binary") for i in range(self.n_devices)})
+        self.device_aurocs = MetricCollection({f"device_{i}": AUROC(task="binary") for i in range(self.n_devices)})
+        self.device_hammings = MetricCollection({f"device_{i}": HammingDistance(task="binary") for i in range(self.n_devices)})
+        self.device_state_change_accuracies = MetricCollection({f"device_{i}": StateChangeAccuracy() for i in range(self.n_devices)})
 
         if isinstance(self.model, ModelBase):
             self.hparams.update(self.model.get_hparams())
@@ -105,7 +104,6 @@ class SequenceLearner(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         out = self._base_step(batch, batch_idx)
-        # self.training_step_outputs.append(out)
 
         self.log_dict({"train_loss": out["loss"]}, on_step=True, on_epoch=False, prog_bar=False)
         
@@ -116,25 +114,47 @@ class SequenceLearner(pl.LightningModule):
         y_hat_rounded = y_hat_clamp >= 0.5
         y_int = y.int()
         
+        self.accuracy(y_hat_rounded, y_int)
+        self.precision(y_hat_rounded, y_int)
+        self.recall(y_hat_rounded, y_int)
+        self.f1score(y_hat_rounded, y_int)
+        self.auroc(y_hat_clamp, y_int)
+        self.hamming(y_hat_rounded, y_int)
+
         self.log_dict({
-            "train_accuracy": self.accuracy(y_hat_rounded, y_int),
-            "train_precision": self.precision(y_hat_rounded, y_int),
-            "train_recall": self.recall(y_hat_rounded, y_int),
-            "train_f1score": self.f1score(y_hat_rounded, y_int),
-            "train_auroc": self.auroc(y_hat_clamp, y_int),
-            "train_hamming": self.hamming(y_hat_clamp, y_int)
-        }, on_step=True, on_epoch=True, prog_bar=True)
+            "train_accuracy": self.accuracy.compute(),
+            "train_precision": self.precision.compute(),
+            "train_recall": self.recall.compute(),
+            "train_f1score": self.f1score.compute(),
+            "train_auroc": self.auroc.compute(),
+            "train_hamming": self.hamming.compute()
+        }, on_step=True, on_epoch=False, prog_bar=True)
         
         for d in range(self.n_devices):
-            state_change_metric = self.device_state_change_accuracies[d](y_hat_rounded[:, d], y_int[:, d])
-            
+            device_preds_clamp = y_hat_clamp[:, d]
+            device_preds_rounded = y_hat_rounded[:, d]
+            device_int = y_int[:, d]
+
+            self.device_accuracies[f"device_{d}"].update(device_preds_rounded, device_int)
+            self.device_precisions[f"device_{d}"].update(device_preds_rounded, device_int)
+            self.device_recalls[f"device_{d}"].update(device_preds_rounded, device_int)
+            self.device_f1scores[f"device_{d}"].update(device_preds_rounded, device_int)
+            self.device_aurocs[f"device_{d}"].update(device_preds_clamp, device_int)
+            self.device_hammings[f"device_{d}"].update(device_preds_rounded, device_int)
+            self.device_state_change_accuracies[f"device_{d}"].update(device_preds_rounded, device_int)
+
+            state_change_metric = self.device_state_change_accuracies[f"device_{d}"].compute()
+
             self.log_dict({
-                f"train_device_{d}_accuracy": self.device_accuracies[d](y_hat_rounded[:, d], y_int[:, d]),
+                f"train_device_{d}_accuracy": self.device_accuracies[f"device_{d}"].compute(),
                 f"train_device_{d}_state_change_accuracy": state_change_metric["accuracy"],
                 f"train_device_{d}_total_state_changes": state_change_metric["total_state_changes"],
-                f"train_device_{d}_precision": self.device_precisions[d](y_hat_rounded[:, d], y_int[:, d]),
-                f"train_device_{d}_recall": self.device_recalls[d](y_hat_rounded[:, d], y_int[:, d])
-            }, on_step=True, on_epoch=True, prog_bar=False)
+                f"train_device_{d}_precision": self.device_precisions[f"device_{d}"].compute(),
+                f"train_device_{d}_recall": self.device_recalls[f"device_{d}"].compute(),
+                f"train_device_{d}_f1score": self.device_f1scores[f"device_{d}"].compute(),
+                f"train_device_{d}_auroc": self.device_aurocs[f"device_{d}"].compute(),
+                f"train_device_{d}_hamming": self.device_hammings[f"device_{d}"].compute()
+            }, on_step=True, on_epoch=False, prog_bar=False)
         
         return out
 
@@ -168,35 +188,6 @@ class SequenceLearner(pl.LightningModule):
     def on_train_epoch_end(self) -> None:
         self._on_base_epoch_end()
 
-        # y_hat = torch.cat([out["y_hat"] for out in self.training_step_outputs])
-        # y = torch.cat([out["y"] for out in self.training_step_outputs])
-
-        # y_hat_clamp = y_hat.clamp(0.0, 1.0)
-        # y_hat_rounded = y_hat_clamp >= 0.5
-        # y_int = y.int()
-
-        # self.log_dict({
-        #     "train_accuracy": self.accuracy(y_hat_rounded, y_int),
-        #     "train_precision": self.precision(y_hat_rounded, y_int),
-        #     "train_recall": self.recall(y_hat_rounded, y_int),
-        #     "train_f1score": self.f1score(y_hat_rounded, y_int),
-        #     "train_auroc": self.auroc(y_hat_clamp, y_int),
-        #     "train_hamming": self.hamming(y_hat_clamp, y_int)
-        # }, on_step=False, on_epoch=True, prog_bar=True)
-
-        # for d in range(self.n_devices):
-        #     state_change_metric = self.device_state_change_accuracies[d](y_hat_rounded[:, d], y_int[:, d])
-
-        #     self.log_dict({
-        #         f"train_device_{d}_accuracy": self.device_accuracies[d](y_hat_rounded[:, d], y_int[:, d]),
-        #         f"train_device_{d}_state_change_accuracy": state_change_metric["accuracy"], # type: ignore
-        #         f"train_device_{d}_total_state_changes": state_change_metric["total_state_changes"], # type: ignore
-        #         f"train_device_{d}_precision": self.device_precisions[d](y_hat_rounded[:, d], y_int[:, d]),
-        #         f"train_device_{d}_recall": self.device_recalls[d](y_hat_rounded[:, d], y_int[:, d])
-        #     }, on_step=False, on_epoch=True, prog_bar=False)
-
-        self.training_step_outputs.clear()
-
     def on_validation_epoch_end(self) -> None:
         self._on_base_epoch_end()
 
@@ -217,24 +208,46 @@ class SequenceLearner(pl.LightningModule):
         y_hat_rounded = y_hat_clamp >= 0.5
         y_int = y.int()
 
+        self.accuracy(y_hat_rounded, y_int)
+        self.precision(y_hat_rounded, y_int)
+        self.recall(y_hat_rounded, y_int)
+        self.f1score(y_hat_rounded, y_int)
+        self.auroc(y_hat_clamp, y_int)
+        self.hamming(y_hat_rounded, y_int)
+
         self.log_dict({
-            "val_accuracy": self.accuracy(y_hat_rounded, y_int),
-            "val_precision": self.precision(y_hat_rounded, y_int),
-            "val_recall": self.recall(y_hat_rounded, y_int),
-            "val_f1score": self.f1score(y_hat_rounded, y_int),
-            "val_auroc": self.auroc(y_hat_clamp, y_int),
-            "val_hamming": self.hamming(y_hat_clamp, y_int)
+            "val_accuracy": self.accuracy.compute(),
+            "val_precision": self.precision.compute(),
+            "val_recall": self.recall.compute(),
+            "val_f1score": self.f1score.compute(),
+            "val_auroc": self.auroc.compute(),
+            "val_hamming": self.hamming.compute()
         }, on_step=False, on_epoch=True, prog_bar=True)
 
         for d in range(self.n_devices):
-            state_change_metric = self.device_state_change_accuracies[d](y_hat_rounded[:, d], y_int[:, d])
+            device_preds_clamp = y_hat_clamp[:, d]
+            device_preds_rounded = y_hat_rounded[:, d]
+            device_int = y_int[:, d]
+
+            self.device_accuracies[f"device_{d}"].update(device_preds_rounded, device_int)
+            self.device_precisions[f"device_{d}"].update(device_preds_rounded, device_int)
+            self.device_recalls[f"device_{d}"].update(device_preds_rounded, device_int)
+            self.device_f1scores[f"device_{d}"].update(device_preds_rounded, device_int)
+            self.device_aurocs[f"device_{d}"].update(device_preds_clamp, device_int)
+            self.device_hammings[f"device_{d}"].update(device_preds_rounded, device_int)
+            self.device_state_change_accuracies[f"device_{d}"].update(device_preds_rounded, device_int)
+
+            state_change_metric = self.device_state_change_accuracies[f"device_{d}"].compute()
 
             self.log_dict({
-                f"val_device_{d}_accuracy": self.device_accuracies[d](y_hat_rounded[:, d], y_int[:, d]),
+                f"val_device_{d}_accuracy": self.device_accuracies[f"device_{d}"].compute(),
                 f"val_device_{d}_state_change_accuracy": state_change_metric["accuracy"],
                 f"val_device_{d}_total_state_changes": state_change_metric["total_state_changes"],
-                f"val_device_{d}_precision": self.device_precisions[d](y_hat_rounded[:, d], y_int[:, d]),
-                f"val_device_{d}_recall": self.device_recalls[d](y_hat_rounded[:, d], y_int[:, d])
+                f"val_device_{d}_precision": self.device_precisions[f"device_{d}"].compute(),
+                f"val_device_{d}_recall": self.device_recalls[f"device_{d}"].compute(),
+                f"val_device_{d}_f1score": self.device_f1scores[f"device_{d}"].compute(),
+                f"val_device_{d}_auroc": self.device_aurocs[f"device_{d}"].compute(),
+                f"val_device_{d}_hamming": self.device_hammings[f"device_{d}"].compute()
             }, on_step=False, on_epoch=True, prog_bar=False)
 
         self.validation_step_outputs.clear()
@@ -258,11 +271,13 @@ class SequenceLearner(pl.LightningModule):
         self.auroc.reset()
         self.hamming.reset()
 
-        for d in range(self.n_devices):
-            self.device_accuracies[d].reset()
-            self.device_state_change_accuracies[d].reset()
-            self.device_precisions[d].reset()
-            self.device_recalls[d].reset()
+        self.device_accuracies.reset()
+        self.device_state_change_accuracies.reset()
+        self.device_precisions.reset()
+        self.device_recalls.reset()
+        self.device_f1scores.reset()
+        self.device_aurocs.reset()
+        self.device_hammings.reset()
 
     # Epoch start
 
