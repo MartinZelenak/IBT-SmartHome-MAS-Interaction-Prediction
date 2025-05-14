@@ -204,26 +204,6 @@ class DeterministicInhabitant(im.Inhabitant):
             ## Turn off the office light
             self.location.get_device_op('office_light', 'turn_off')(self.name)
 
-    # TODO: Return a lambda action to perform after the state ends or gets prolonged,
-    #       so that the inhabitant doesn't turn off the light and "sit there in the darkness"
-    # @override
-    # def prepares_food_state(self) -> Generator[simpy.Event, Any, Callable[..., Any] | None]:
-    #     # Go to the kitchen
-    #     if(not self.is_in_room('kitchen')):
-    #         yield self.env.timeoutRequest(0.75)
-    #         self.change_room('kitchen')
-
-    #     ## Turn on the kitchen light
-    #     if self.env.timeslot.Hour > 19:
-    #         self.location.get_device_op('kitchen_light', 'turn_on')(self.name)
-
-    #     try:
-    #         # Prepare food
-    #         yield self.env.timeoutRequest(30)
-    #     finally:
-    #         ## Turn off the kitchen light
-    #         return lambda self: self.location.get_device_op('kitchen_light', 'turn_off')(self.name)
-
     @override
     def prepares_food_state(self) -> Generator[simpy.Event, None, None]:
         # Go to the kitchen
