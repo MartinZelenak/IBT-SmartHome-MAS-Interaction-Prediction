@@ -1,9 +1,14 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: The different messages sent and received by the multi-agent system interface
+            and utility functions.
+Date: 2025-05-14
+"""
+
 from typing import Dict, List, Optional, Tuple
 
 import xmpp
 from MAS.data import *
-
-# REVIEW: Unify body parsing/validation being done in one place (match() method or interface)
 
 # Example of a message with SPADE metadata:
 # <message xml:lang='en'

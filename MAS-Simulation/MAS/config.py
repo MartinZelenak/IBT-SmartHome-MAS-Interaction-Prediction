@@ -1,3 +1,10 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: Configuration parsing utilities.
+Date: 2025-05-14
+"""
+
+
 from dataclasses import dataclass
 from typing import Tuple
 

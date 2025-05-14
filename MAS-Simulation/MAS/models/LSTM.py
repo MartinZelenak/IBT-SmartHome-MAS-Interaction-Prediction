@@ -1,3 +1,9 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: A LSTM model for device state prediction.
+Date: 2025-05-14
+"""
+
 from typing import Any, Dict, Tuple, override
 
 import torch

@@ -1,3 +1,11 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: Provides system startup, configuration, and main loop logic for the multi-agent system
+            including agent initialization and logging setup.
+Date: 2025-05-14
+"""
+
+
 import spade
 import logging
 import logging.config

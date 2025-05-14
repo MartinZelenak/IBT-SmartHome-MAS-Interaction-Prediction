@@ -1,3 +1,9 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: The different messages sent and received by the multi-agent system.
+Date: 2025-05-14
+"""
+
 from spade.message import Message, MessageBase
 from spade.template import Template
 from typing import Tuple, Optional

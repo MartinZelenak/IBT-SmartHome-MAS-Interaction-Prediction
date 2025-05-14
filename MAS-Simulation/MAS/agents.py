@@ -1,3 +1,10 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: The individual agents in the multi-agent system.
+Date: 2025-05-14
+"""
+
+
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, PeriodicBehaviour, OneShotBehaviour
 import asyncio

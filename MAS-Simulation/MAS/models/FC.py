@@ -1,3 +1,9 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: A FC model for device state prediction.
+Date: 2025-05-14
+"""
+
 from typing import Any, Dict, Tuple, override
 
 import torch
@@ -19,6 +25,5 @@ class ModelFC(ModelBase):
 
     @override
     def forward(self, input: torch.Tensor, hidden_state: torch.Tensor | None = None) -> Tuple[torch.Tensor, torch.Tensor]:
-        # TEST: Does nn.Linear consider sequenced and batched input?
         out = self.fc.forward(input)
         return (out, torch.empty(1))

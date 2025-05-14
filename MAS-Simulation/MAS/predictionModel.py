@@ -1,3 +1,10 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: The PredictionModel class encapsulating a nerual network model for device state prediction.
+Date: 2025-05-14
+"""
+
+
 import logging
 import os
 from dataclasses import dataclass
@@ -9,7 +16,7 @@ import torch.nn as nn
 from .systemStats import SystemStats
 from .models.modelBase import ModelBase
 from .models.FC import ModelFC
-from .models.RNN import PerDeviceRNN
+from .models.RNN import ModelRNN
 from .models.LSTM import ModelLSTM
 from .models.CfC import ModelCfC
 
@@ -206,7 +213,7 @@ class PredictionModel:
         elif type.upper() == "LSTM":
             return ModelLSTM(input_size, 1, hidden_size, num_layers)
         elif type.upper() == "RNN":
-            return PerDeviceRNN(input_size, 1, hidden_size, num_layers)
+            return ModelRNN(input_size, 1, hidden_size, num_layers)
         elif type.upper() == "FC":
             return ModelFC(input_size, 1, hidden_size, num_layers)
         else:

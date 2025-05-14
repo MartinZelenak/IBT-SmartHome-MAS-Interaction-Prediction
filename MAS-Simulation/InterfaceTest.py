@@ -1,3 +1,11 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: This script runs the multi-agent system and provides a CLI hands on demonstration
+            of using the multi-agent system throught the system interface.
+Date: 2025-05-14
+"""
+
+
 import logging
 import logging.config
 import yaml
@@ -44,7 +52,7 @@ def main():
                                     initial_state=0)
         added_initial_agents = True
 
-    if added_initial_agents and input("# Set device filter? (y/n) \n") == "y":
+    if added_initial_agents and input("# Set initial device filter? (y/n) \n") == "y":
         enabled = input("## Enable filter? (y/n) \n") == "y"
         treshold_off = float(input("## Enter treshold off: "))
         treshold_on = float(input("## Enter treshold on: "))
@@ -65,6 +73,8 @@ def main():
         jid = input("## Enter the device agent MAS.JID: ")
         password = input("## Enter the device agent password: ")
         system_interface.add_device(MAS.JID(jid), password, 0)
+
+    # TODO: Add a prediction filter for a device for a user
 
     print(f"# State: {system_interface.environment_state}")
 

@@ -1,3 +1,10 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: Classes for the different data sent in messages.
+Date: 2025-05-14
+"""
+
+
 from dataclasses import dataclass
 from typing import Dict, Optional
 import json

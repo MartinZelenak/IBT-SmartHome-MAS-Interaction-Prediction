@@ -1,3 +1,11 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: Contains the interface for using and integrating the multi-agent system, including communication,
+            process management, and system control.
+Date: 2025-05-14
+"""
+
+
 import logging
 import threading
 import time
