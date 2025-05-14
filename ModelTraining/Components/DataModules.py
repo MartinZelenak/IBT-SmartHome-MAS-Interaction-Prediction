@@ -1,3 +1,11 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: A PyTorch Lightning data module for handling sequential state datasets.
+            It manages data loading and preprocessing for training, validation, and testing.
+Date: 2025-05-14
+"""
+
+
 from typing import List
 
 import pytorch_lightning as pl

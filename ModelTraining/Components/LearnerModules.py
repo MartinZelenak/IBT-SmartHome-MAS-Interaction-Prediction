@@ -1,3 +1,12 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: A PyTorch Lightning module for training sequence models that predict device states.
+            It handles model training, validation, and testing with various metrics for evaluating
+            prediction accuracy across multiple devices.
+Date: 2025-05-14
+"""
+
+
 from typing import Tuple, List, Dict
 
 import pytorch_lightning as pl

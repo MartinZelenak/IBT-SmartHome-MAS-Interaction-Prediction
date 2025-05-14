@@ -1,3 +1,12 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: A custom PyTorch metric that measures prediction accuracy specifically at points
+            where device states change. It tracks state transitions across sequential data points
+            and evaluates the accuracy at these moments.
+Date: 2025-05-14
+"""
+
+
 import torch
 from torchmetrics import Metric
 

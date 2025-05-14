@@ -1,3 +1,11 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: A PyTorch Dataset classes for sequential data and event-based data,
+            including support for data transforms and column removal.
+Date: 2025-05-14
+"""
+
+
 from abc import ABC, abstractmethod
 from typing import Generator, Optional, Sequence, override
 

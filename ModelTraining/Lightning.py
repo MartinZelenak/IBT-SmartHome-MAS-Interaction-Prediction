@@ -1,3 +1,9 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: This script provides a CLI for training different neural network models on sequence data for device state prediction.
+Date: 2025-05-14
+"""
+
 import argparse
 import os
 from typing import Any, Dict, List, Type

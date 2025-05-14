@@ -1,3 +1,12 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: A RNN model for device state prediction.
+            It uses separate RNN models for each device, combining shared input features with 
+            device-specific features to generate predictions for each device independently.
+Date: 2025-05-14
+"""
+
+
 from typing import Any, Dict, List, Tuple, override
 
 import torch

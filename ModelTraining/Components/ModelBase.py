@@ -1,3 +1,9 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: Base class for neural network models that defines a common interface.
+Date: 2025-05-14
+"""
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Tuple
 

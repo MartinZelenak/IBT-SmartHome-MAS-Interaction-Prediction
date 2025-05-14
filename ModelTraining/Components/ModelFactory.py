@@ -1,3 +1,9 @@
+"""
+Author: Martin Zelenák (xzelen27@stud.fit.vutbr.cz)
+Description: Factory class for creating the different types of neural network models.
+Date: 2025-05-14
+"""
+
 from .Models.CfC import PerDeviceCfC
 from .Models.FC import PerDeviceFC
 from .Models.LSTM import PerDeviceLSTM
