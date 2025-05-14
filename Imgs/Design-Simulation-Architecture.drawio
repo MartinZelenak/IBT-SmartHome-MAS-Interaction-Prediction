@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="i0kpc1rrfFxgzFOLtM8V" name="Page-1">
-        <mxGraphModel dx="587" dy="618" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="968" dy="707" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -84,7 +84,7 @@
                 <mxCell id="44" value="&lt;br&gt;&lt;br&gt;Trénovací data" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;labelBackgroundColor=none;" parent="51" vertex="1">
                     <mxGeometry width="60" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="52" value="Logování pro&lt;div&gt;uživatele X&lt;/div&gt;" style="verticalLabelPosition=bottom;verticalAlign=top;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;spacing=0;spacingTop=-53;spacingBottom=0;spacingRight=10;" vertex="1" parent="1">
+                <mxCell id="52" value="Zaznamenávání pro&lt;div&gt;uživatele X&lt;/div&gt;" style="verticalLabelPosition=bottom;verticalAlign=top;html=1;shape=mxgraph.basic.layered_rect;dx=10;outlineConnect=0;whiteSpace=wrap;spacing=0;spacingTop=-60;spacingBottom=0;spacingRight=10;" parent="1" vertex="1">
                     <mxGeometry x="455" y="400" width="100" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="42" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=20;entryDy=0;entryPerimeter=0;endArrow=classic;endFill=1;" parent="1" target="44" edge="1">
