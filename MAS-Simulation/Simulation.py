@@ -80,17 +80,17 @@ def main():
     # Day dividing prints
     env.process(day_divider(env))
 
-    # Inhabitants
     stateLoggers: List[StateLogger] = []
+    logFolder = Config["Simulation"]["inhabitants_logs"]["folder"]
     
-    # Create deterministic inhabitants
+    # Deterministic inhabitants
     for i in range(1, NUM_OF_DETERMINISTIC_INHABITANTS + 1):
         inhabitant = DeterministicInhabitant(env, str(i), NO_WEEKEND)
         inhabitant.location = env.home.rooms["bedroom"]  # Start in the bedroom
         env.process(inhabitant.behavior())
 
         # Periodic State logger
-        logFilePath = f"./logs/inhabitant_{str(i)}-{LOG_TIME_INTERVAL}min.csv"
+        logFilePath = f"{logFolder}/inhabitant_{str(i)}-{LOG_TIME_INTERVAL}min.csv"
         logger = PeriodicStateLogger(env, LOG_TIME_INTERVAL, logFilePath, inhabitant)
         env.eventHandler.subscribe("light_turned_on", logger.deviceTurnedOnHandler)
         env.eventHandler.subscribe("light_turned_off", logger.deviceTurnedOffHandler)
@@ -98,21 +98,21 @@ def main():
         stateLoggers.append(logger)
 
         # Event State Logger
-        logFilePath = f"./logs/inhabitant_{str(i)}-events.csv"
+        logFilePath = f"{logFolder}/inhabitant_{str(i)}-events.csv"
         logger = EventStateLogger(env, logFilePath, inhabitant)
         env.eventHandler.subscribe("light_turned_on", logger.deviceTurnedOnHandler)
         env.eventHandler.subscribe("light_turned_off", logger.deviceTurnedOffHandler)
         env.eventHandler.subscribe("inhabitant_changed_location", logger.inhabitantChangedLocation)
         stateLoggers.append(logger)
     
-    # Create stochastic inhabitants
+    # Stochastic inhabitants
     for i in range(NUM_OF_DETERMINISTIC_INHABITANTS + 1, NUM_OF_DETERMINISTIC_INHABITANTS + NUM_OF_STOCHASTIC_INHABITANTS + 1):
         inhabitant = StochasticInhabitant(env, str(i), NO_WEEKEND)
         inhabitant.location = env.home.rooms["bedroom"]  # Start in the bedroom
         env.process(inhabitant.behavior())
 
         # Periodic State logger
-        logFilePath = f"./logs/inhabitant_{str(i)}-{LOG_TIME_INTERVAL}min.csv"
+        logFilePath = f"{logFolder}/inhabitant_{str(i)}-{LOG_TIME_INTERVAL}min.csv"
         logger = PeriodicStateLogger(env, LOG_TIME_INTERVAL, logFilePath, inhabitant)
         env.eventHandler.subscribe("light_turned_on", logger.deviceTurnedOnHandler)
         env.eventHandler.subscribe("light_turned_off", logger.deviceTurnedOffHandler)
@@ -120,7 +120,7 @@ def main():
         stateLoggers.append(logger)
 
         # Event State Logger
-        logFilePath = f"./logs/inhabitant_{str(i)}-events.csv"
+        logFilePath = f"{logFolder}/inhabitant_{str(i)}-events.csv"
         logger = EventStateLogger(env, logFilePath, inhabitant)
         env.eventHandler.subscribe("light_turned_on", logger.deviceTurnedOnHandler)
         env.eventHandler.subscribe("light_turned_off", logger.deviceTurnedOffHandler)
