@@ -25,9 +25,8 @@ datamodule:
 
 # Model parameters
 model:
-  hidden_size: 16
-  num_layers: 5
-  per_device_input_size: 1  # device state (on/off)
+  hidden_size: 128
+  num_layers: 3
 
 # Training parameters
 training:

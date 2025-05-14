@@ -25,7 +25,7 @@ MODEL_DICT: Dict[str, Type[ModelBase]] = {
 
 def load_config(config_path: str) -> Dict[str, Any]:
     """Load configuration from YAML file."""
-    with open(config_path, 'r') as config_file:
+    with open(config_path, "r") as config_file:
         return yaml.safe_load(config_file)
 
 def main():
@@ -101,7 +101,7 @@ def main():
     model = ModelFactory.create_model(
         model_class,
         shared_input_size=shared_input_size,
-        per_device_input_size=model_config["per_device_input_size"],
+        per_device_input_size=1,
         hidden_size=model_config["hidden_size"],
         num_layers=model_config["num_layers"],
         n_devices=n_smart_devices,
